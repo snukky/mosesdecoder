@@ -9,8 +9,8 @@ if $(with-vw) {
   lib vw : : <search>$(with-vw)/lib ;
   lib allreduce : : <search>$(with-vw)/lib ;
 
-  obj ClassifierFactory.o : ClassifierFactory.cpp headers : <include>$(with-vw)/include/vowpalwabbit ;
-  obj VWPredictor.o : VWPredictor.cpp headers : <include>$(with-vw)/include/vowpalwabbit ;
+  obj ClassifierFactory.o : ClassifierFactory.cpp headers : <include>$(with-vw) ;
+  obj VWPredictor.o : VWPredictor.cpp headers : <include>$(with-vw) ;
 
   alias vw_objects : VWPredictor.o ClassifierFactory.o vw allreduce : : : <library>boost_program_options ;
   lib classifier : [ glob *.cpp : VWPredictor.cpp ClassifierFactory.cpp ] vw_objects headers ;
