@@ -107,6 +107,8 @@ FFState* VW::EvaluateWhenApplied(
     const InputType& input = curHypo.GetManager().GetSource();
 
     Discriminative::Classifier &classifier = *m_tlsClassifier->GetStored();
+    if (! m_confusionSet.empty() && classifier.GetConfusionSet().Empty())
+      classifier.GetConfusionSet().Reset(m_confusionSet);
 
     // extract target context features
     size_t contextHash = prevVWState.hash();
@@ -183,13 +185,16 @@ const FFState* VW::EmptyHypothesisState(const InputType &input) const {
   Phrase initialPhrase;
   for (size_t i = 0; i < maxContextSize; i++)
     initialPhrase.AddWord(m_sentenceStartWord);
-    
+
   return new VWState(initialPhrase);
 }
 
 void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
     , const TranslationOptionList &translationOptionList) const {
+
   Discriminative::Classifier &classifier = *m_tlsClassifier->GetStored();
+  if (! m_confusionSet.empty() && classifier.GetConfusionSet().Empty())
+    classifier.GetConfusionSet().Reset(m_confusionSet);
 
   if (translationOptionList.size() == 0)
     return; // nothing to do
@@ -264,8 +269,10 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       Discriminative::FeatureVector dummyVector;
 
       // extract source side features
-      for(size_t i = 0; i < sourceFeatures.size(); ++i)
+      for(size_t i = 0; i < sourceFeatures.size(); ++i) {
+        VERBOSE(4, "  VW :: Source feature [" << i << "] :: " << sourceFeatures[i]->GetFFName() << "\n");
         (*sourceFeatures[i])(input, sourceRange, classifier, dummyVector);
+      }
 
       // build target-side context
       Phrase targetContext;
@@ -276,13 +283,14 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
       // word alignment info shifted by context size
       AlignmentInfo contextAlignment = TransformAlignmentInfo(*GetStored()->m_alignment, maxContextSize, currentStart);
-
       if (currentStart > 0)
         targetContext.Append(targetSent->GetSubString(Range(0, currentStart - 1)));
 
       // extract target-context features
-      for(size_t i = 0; i < contextFeatures.size(); ++i)
+      for(size_t i = 0; i < contextFeatures.size(); ++i) {
+        VERBOSE(4, "  VW :: Context feature [" << i << "] :: " << contextFeatures[i]->GetFFName() << "\n");
         (*contextFeatures[i])(input, targetContext, contextAlignment, classifier, dummyVector);
+      }
 
       // go over topts, extract target side features and train the classifier
       for (size_t toptIdx = 0; toptIdx < translationOptionList.size(); toptIdx++) {
@@ -293,8 +301,10 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
         // extract target-side features for each topt
         const TargetPhrase &targetPhrase = translationOptionList.Get(toptIdx)->GetTargetPhrase();
-        for(size_t i = 0; i < targetFeatures.size(); ++i)
+        for(size_t i = 0; i < targetFeatures.size(); ++i) {
+          VERBOSE(4, "  VW :: Target feature [" << toptIdx << "," << i << "] :: " << targetFeatures[i]->GetFFName() << "\n");
           (*targetFeatures[i])(input, targetPhrase, classifier, dummyVector);
+        }
 
         bool isCorrect = correct[toptIdx] && startsAt[toptIdx] == currentStart;
         float loss = (*m_trainingLoss)(targetPhrase, correctPhrase, isCorrect);
@@ -355,7 +365,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         // We have target context features => this is just a partial score,
         // do not add it to the score component collection.
         size_t toptHash = hash_value(*topt);
-        
+
         // Subtract the score contribution of target-only features, otherwise it would
         // be included twice.
         Discriminative::FeatureVector emptySource;
@@ -400,6 +410,8 @@ void VW::SetParameter(const std::string& key, const std::string& value) {
     } else {
       UTIL_THROW2("Unknown loss type:" << value);
     }
+  } else if (key == "cset") {
+    boost::split(m_confusionSet, value, boost::is_any_of(","));
   } else {
     StatefulFeatureFunction::SetParameter(key, value);
   }

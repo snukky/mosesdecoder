@@ -17,6 +17,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include "../util/string_piece.hh"
 #include "../moses/Util.h"
+#include "vw/ConfusionSet.h"
 
 // forward declarations to avoid dependency on VW
 struct vw;
@@ -74,6 +75,10 @@ public:
     return AddLabelDependentFeature(name, 1.0);
   }
 
+  ConfusionSet& GetConfusionSet() {
+    return m_confusionSet;
+  }
+
   virtual ~Classifier() {}
 
 protected:
@@ -91,6 +96,7 @@ protected:
 
   const static bool DEBUG = false;
 
+  ConfusionSet m_confusionSet;
 };
 
 // some of VW settings are hard-coded because they are always needed in our scenario
