@@ -91,6 +91,11 @@
 #include "moses/FF/VW/VWFeatureSourceExternalFeatures.h"
 #include "moses/FF/VW/VWFeatureTargetPhraseInternal.h"
 #include "moses/FF/VW/VWFeatureTargetPhraseScores.h"
+
+#include "moses/FF/VW/VWFeatureSourceConfusionWord.h"
+#include "moses/FF/VW/VWFeatureTargetConfusionWord.h"
+#include "moses/FF/VW/VWFeatureSourceAdjacentNGrams.h"
+#include "moses/FF/VW/VWFeatureTargetAdjacentNGrams.h"
 #endif
 
 #ifdef HAVE_CMPH
@@ -317,6 +322,11 @@ FeatureRegistry::FeatureRegistry()
   MOSES_FNAME(VWFeatureTargetIndicator);
   MOSES_FNAME(VWFeatureSourceExternalFeatures);
   MOSES_FNAME(VWFeatureTargetPhraseScores);
+
+  MOSES_FNAME(VWFeatureSourceConfusionWord);
+  MOSES_FNAME(VWFeatureTargetConfusionWord);
+  MOSES_FNAME(VWFeatureSourceAdjacentNGrams);
+  MOSES_FNAME(VWFeatureTargetAdjacentNGrams);
 #endif
 
 #ifdef HAVE_CMPH
