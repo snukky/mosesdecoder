@@ -26,6 +26,10 @@ public:
   virtual void SetParameter(const std::string& key, const std::string& value) {
     VWFeatureTarget::SetParameter(key, value);
   }
+
+  const char* GetFFName() const {
+    return "VWFeatureTargetIndicator";
+  }
 };
 
 }

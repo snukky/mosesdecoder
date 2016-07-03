@@ -37,6 +37,10 @@ public:
   virtual void SetParameter(const std::string& key, const std::string& value) {
     VWFeatureSource::SetParameter(key, value);
   }
+
+  const char* GetFFName() const {
+    return "VWFeatureSourceIndicator";
+  }
 };
 
 }

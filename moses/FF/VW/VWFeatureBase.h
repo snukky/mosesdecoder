@@ -12,7 +12,7 @@
 namespace Moses
 {
 
-enum VWFeatureType { 
+enum VWFeatureType {
   vwft_source,
   vwft_target,
   vwft_targetContext
@@ -54,6 +54,7 @@ public:
 
   // Common parameters for classifier features, both source and target features
   virtual void SetParameter(const std::string& key, const std::string& value) {
+    VERBOSE(3, "VWFeature :: Setting parameter " << key << "=" << value << "\n");
     if (key == "used-by") {
       ParseUsedBy(value);
     } else if (key == "source-factors") {
@@ -119,6 +120,10 @@ public:
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const = 0;
 
+  virtual const char* GetFFName() const {
+    return "VWFeatureBase";
+  }
+
 protected:
   std::vector<FactorType> m_sourceFactors, m_targetFactors;
 
@@ -157,4 +162,3 @@ private:
 };
 
 }
-
