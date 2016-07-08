@@ -204,12 +204,12 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
   // which feature functions do we use (on the source and target side)
   const std::vector<VWFeatureBase*>& sourceFeatures =
     VWFeatureBase::GetSourceFeatures(GetScoreProducerDescription());
-
   const std::vector<VWFeatureBase*>& contextFeatures =
     VWFeatureBase::GetTargetContextFeatures(GetScoreProducerDescription());
-
   const std::vector<VWFeatureBase*>& targetFeatures =
     VWFeatureBase::GetTargetFeatures(GetScoreProducerDescription());
+  const std::vector<VWFeatureBase*>& editFeatures =
+    VWFeatureBase::GetEditFeatures(GetScoreProducerDescription());
 
   size_t maxContextSize = VWFeatureBase::GetMaximumContextSize(GetScoreProducerDescription());
 
@@ -306,6 +306,12 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
           (*targetFeatures[i])(input, targetPhrase, classifier, dummyVector);
         }
 
+        // extract edit features for each topt
+        for(size_t i = 0; i < editFeatures.size(); ++i) {
+          VERBOSE(4, "  VW :: Edit feature [" << toptIdx << "," << i << "] :: " << editFeatures[i]->GetFFName() << "\n");
+          (*editFeatures[i])(input, sourceRange, targetPhrase, classifier, dummyVector);
+        }
+
         bool isCorrect = correct[toptIdx] && startsAt[toptIdx] == currentStart;
         float loss = (*m_trainingLoss)(targetPhrase, correctPhrase, isCorrect);
 
@@ -334,6 +340,11 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       // extract target-side features for each topt
       for(size_t i = 0; i < targetFeatures.size(); ++i)
         (*targetFeatures[i])(input, targetPhrase, classifier, outFeaturesTargetNamespace);
+
+      // extract edit features for each topt
+      for(size_t i = 0; i < editFeatures.size(); ++i)
+        // TODO: I'am adding edit features into target feature vector - is it correct?
+        (*editFeatures[i])(input, sourceRange, targetPhrase, classifier, outFeaturesTargetNamespace);
 
       // cache the extracted target features (i.e. features associated with given topt)
       // for future use at decoding time

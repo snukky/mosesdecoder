@@ -39,6 +39,13 @@ public:
                           , Discriminative::FeatureVector &outFeatures) const {
   }
 
+  virtual void operator()(const InputType &input
+                          , const Range &sourceRange
+                          , const TargetPhrase &targetPhrase
+                          , Discriminative::Classifier &classifier
+                          , Discriminative::FeatureVector &outFeatures) const {
+  }
+
   virtual void SetParameter(const std::string& key, const std::string& value) {
     if (key == "size") {
       m_contextSize = Scan<size_t>(value);

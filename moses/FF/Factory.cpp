@@ -96,6 +96,7 @@
 #include "moses/FF/VW/VWFeatureTargetConfusionWord.h"
 #include "moses/FF/VW/VWFeatureSourceAdjacentNGrams.h"
 #include "moses/FF/VW/VWFeatureTargetAdjacentNGrams.h"
+#include "moses/FF/VW/VWFeatureEditPair.h"
 #endif
 
 #ifdef HAVE_CMPH
@@ -327,6 +328,7 @@ FeatureRegistry::FeatureRegistry()
   MOSES_FNAME(VWFeatureTargetConfusionWord);
   MOSES_FNAME(VWFeatureSourceAdjacentNGrams);
   MOSES_FNAME(VWFeatureTargetAdjacentNGrams);
+  MOSES_FNAME(VWFeatureEditPair);
 #endif
 
 #ifdef HAVE_CMPH

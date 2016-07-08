@@ -15,7 +15,8 @@ namespace Moses
 enum VWFeatureType {
   vwft_source,
   vwft_target,
-  vwft_targetContext
+  vwft_targetContext,
+  vwft_edit,
 };
 
 class VWFeatureBase : public StatelessFeatureFunction
@@ -90,6 +91,12 @@ public:
     return s_targetFeatures[name];
   }
 
+  // Return only target-dependent-with-source classifier features
+  static const std::vector<VWFeatureBase*>& GetEditFeatures(std::string name = "VW0") {
+    UTIL_THROW_IF2(s_editFeatures.count(name) == 0, "No edit features registered for parent classifier: " + name);
+    return s_editFeatures[name];
+  }
+
   // Required length context (maximum context size of defined target-context features)
   static size_t GetMaximumContextSize(std::string name = "VW0") {
     return s_targetContextLength[name]; // 0 by default
@@ -120,6 +127,13 @@ public:
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const = 0;
 
+  // Overload to process target-dependent features with source information.
+  virtual void operator()(const InputType &input
+                          , const Range &sourceRange
+                          , const TargetPhrase &targetPhrase
+                          , Discriminative::Classifier &classifier
+                          , Discriminative::FeatureVector &outFeatures) const = 0;
+
   virtual const char* GetFFName() const {
     return "VWFeatureBase";
   }
@@ -134,6 +148,8 @@ protected:
 
       if(m_featureType == vwft_source) {
         s_sourceFeatures[*it].push_back(this);
+      } else if (m_featureType == vwft_edit) {
+        s_editFeatures[*it].push_back(this);
       } else if (m_featureType == vwft_targetContext) {
         s_targetContextFeatures[*it].push_back(this);
         UpdateContextSize(*it);
@@ -157,6 +173,7 @@ private:
   static std::map<std::string, std::vector<VWFeatureBase*> > s_sourceFeatures;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_targetContextFeatures;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_targetFeatures;
+  static std::map<std::string, std::vector<VWFeatureBase*> > s_editFeatures;
 
   static std::map<std::string, size_t> s_targetContextLength;
 };
