@@ -93,7 +93,7 @@ public:
 
   // Return only target-dependent-with-source classifier features
   static const std::vector<VWFeatureBase*>& GetEditFeatures(std::string name = "VW0") {
-    UTIL_THROW_IF2(s_editFeatures.count(name) == 0, "No edit features registered for parent classifier: " + name);
+    // this feature type is not mandatory
     return s_editFeatures[name];
   }
 
