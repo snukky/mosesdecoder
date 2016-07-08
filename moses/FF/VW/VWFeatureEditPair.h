@@ -26,15 +26,23 @@ public:
     for (size_t i = 0; i < targetPhrase.GetSize(); i++) {
       std::string tWord = GetTargetWord(targetPhrase, i);
       if (classifier.GetConfusionSet().Has(tWord)) {
-        std::vector<std::string> sWords = GetAlignedSourceWords(targetPhrase, sourceRange, input, i);
+        // TODO: make it efficient?
+        std::vector<std::string> sWords =
+          GetAlignedSourceWords(targetPhrase, sourceRange, input, i);
+
+        bool isAdded = false;
         for (size_t j = 0; j < sWords.size(); ++j) {
           if (classifier.GetConfusionSet().Has(sWords[j])) {
-            outFeatures.push_back(classifier.AddLabelDependentFeature("epair^" + sWords[j] + "->" + tWord));
+            outFeatures.push_back(classifier.AddLabelDependentFeature(
+                "epair^" + sWords[j] + "=>" + tWord));
+            isAdded = true;
             // take only the first confusion word and do not process further
             break;
           }
         }
-        outFeatures.push_back(classifier.AddLabelDependentFeature("epair^" + CW_NULL + "->" + tWord));
+        if (! isAdded)
+          outFeatures.push_back(classifier.AddLabelDependentFeature(
+              "epair^<null>=>" + tWord));
       }
     }
   }
@@ -46,12 +54,6 @@ public:
   virtual const char* GetFFName() const {
     return "VWFeatureEditPair";
   }
-
-private:
-  // label for a <null> confusion word
-  const static std::string CW_NULL;
 };
-
-const std::string VWFeatureEditPair::CW_NULL = "NULL";
 
 }
