@@ -50,7 +50,7 @@ public:
     if (key == "size") {
       m_contextSize = Scan<size_t>(value);
     } else if (key == "factor-positions") {
-      // factor positions: assuming a factor such as positional morphological tag, use this 
+      // factor positions: assuming a factor such as positional morphological tag, use this
       // option to select only certain positions; this assumes that only a single
       // target-side factor is defined
       Tokenize<size_t>(m_factorPositions, value, ",");
@@ -115,7 +115,7 @@ protected:
   // required context size
   size_t m_contextSize;
 
-  // factor positions: assuming a factor such as positional morphological tag, use this 
+  // factor positions: assuming a factor such as positional morphological tag, use this
   // option to select only certain positions
   std::vector<size_t> m_factorPositions;
 };

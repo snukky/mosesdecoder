@@ -34,8 +34,8 @@ public:
     // set constraints according to alignment points
     AlignmentInfo::const_iterator it;
     for (it = m_alignment->begin(); it != m_alignment->end(); it++) {
-      int src = it->first;
-      int tgt = it->second;
+      size_t src = it->first;
+      size_t tgt = it->second;
 
       if (src >= m_sourceConstraints.size() || tgt >= m_targetConstraints.size()) {
         UTIL_THROW2("VW :: alignment point out of bounds: " << src << "-" << tgt);

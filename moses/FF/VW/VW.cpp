@@ -75,7 +75,7 @@ FFState* VW::EvaluateWhenApplied(
   const Hypothesis& curHypo,
   const FFState* prevState,
   ScoreComponentCollection* accumulator) const
-{ 
+{
   VERBOSE(3, "VW :: Evaluating translation options\n");
 
   const VWState& prevVWState = *static_cast<const VWState *>(prevState);
@@ -96,12 +96,12 @@ FFState* VW::EvaluateWhenApplied(
   // compute our current key
   size_t cacheKey = MakeCacheKey(prevState, spanStart, spanEnd);
 
-  boost::unordered_map<size_t, FloatHashMap> &computedStateExtensions 
+  boost::unordered_map<size_t, FloatHashMap> &computedStateExtensions
     = *m_tlsComputedStateExtensions->GetStored();
 
   if (computedStateExtensions.find(cacheKey) == computedStateExtensions.end()) {
     // we have not computed this set of translation options yet
-    const TranslationOptionList *topts = 
+    const TranslationOptionList *topts =
       curHypo.GetManager().getSntTranslationOptions()->GetTranslationOptionList(spanStart, spanEnd);
 
     const InputType& input = curHypo.GetManager().GetSource();
@@ -343,7 +343,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
       // extract edit features for each topt
       for(size_t i = 0; i < editFeatures.size(); ++i)
-        // TODO: I'am adding edit features into target feature vector - is it correct?
+        // TODO: edit features are added into target feature vector - is it correct?
         (*editFeatures[i])(input, sourceRange, targetPhrase, classifier, outFeaturesTargetNamespace);
 
       // cache the extracted target features (i.e. features associated with given topt)
@@ -549,9 +549,9 @@ std::pair<bool, int> VW::IsCorrectTranslationOption(const TranslationOption &top
   for(int i = targetStart2; i >= 0 && !targetSentence.m_targetConstraints[i].IsSet(); --i)
     targetStart2 = i;
 
-  int targetEnd2   = targetEnd;
+  int targetEnd2 = targetEnd;
   for(int i = targetEnd2;
-      i < targetSentence.m_sentence->GetSize() && !targetSentence.m_targetConstraints[i].IsSet();
+      i < (int)targetSentence.m_sentence->GetSize() && !targetSentence.m_targetConstraints[i].IsSet();
       ++i)
     targetEnd2 = i;
 
@@ -561,18 +561,18 @@ std::pair<bool, int> VW::IsCorrectTranslationOption(const TranslationOption &top
   //std::cerr << tphrase << std::endl;
 
   // if target phrase is shorter than inner span return false
-  if(tphrase.GetSize() < targetEnd - targetStart + 1)
+  if((int)tphrase.GetSize() < targetEnd - targetStart + 1)
     return std::make_pair(false, -1);
 
   // if target phrase is longer than outer span return false
-  if(tphrase.GetSize() > targetEnd2 - targetStart2 + 1)
+  if((int)tphrase.GetSize() > targetEnd2 - targetStart2 + 1)
     return std::make_pair(false, -1);
 
   // for each possible starting point
   for(int tempStart = targetStart2; tempStart <= targetStart; tempStart++) {
     bool found = true;
     // check if the target phrase is within longer span
-    for(int i = tempStart; i <= targetEnd2 && i < tphrase.GetSize() + tempStart; ++i) {
+    for(int i = tempStart; i <= targetEnd2 && i < (int)tphrase.GetSize() + tempStart; ++i) {
       if(tphrase.GetWord(i - tempStart) != targetSentence.m_sentence->GetWord(i)) {
         found = false;
         break;
