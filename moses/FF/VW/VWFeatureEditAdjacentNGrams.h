@@ -50,7 +50,7 @@ public:
               // a naive assumption that the first word from the right source
               // context should follow the last word of the target phrase
               size_t idx = rightContextFirstIdx + (k - targetPhrase.GetSize());
-              ngram += (rightContextFirstIdx + idx)
+              ngram += (rightContextFirstIdx + idx < input.GetSize())
                 ? ("^" + GetSourceWord(input, idx))
                 : "^</s>";
             } else {
