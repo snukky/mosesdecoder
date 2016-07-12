@@ -29,6 +29,8 @@
 #include "VWState.h"
 #include "VW.h"
 
+#include "moses/FF/VW/ConfusionWordFinder.h"
+
 namespace Moses
 {
 
@@ -268,9 +270,18 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       // this is training time, simply store everything in this dummyVector
       Discriminative::FeatureVector dummyVector;
 
+      VERBOSE(4, " VW :: Source :: ");
+      for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
+        VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
+      VERBOSE(4, "\n");
+
+      //ConfusionWordFinder finder(classifier.GetConfusionSet());
+      //CWordInfo cwInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
+      //VERBOSE(4, "  VW :: CWordInfo :: " << cwInfo << "\n");
+
       // extract source side features
       for(size_t i = 0; i < sourceFeatures.size(); ++i) {
-        VERBOSE(4, "  VW :: Source feature [" << i << "] :: " << sourceFeatures[i]->GetFFName() << "\n");
+        VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << sourceFeatures[i]->GetFFName() << "\n");
         (*sourceFeatures[i])(input, sourceRange, classifier, dummyVector);
       }
 
@@ -288,7 +299,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
       // extract target-context features
       for(size_t i = 0; i < contextFeatures.size(); ++i) {
-        VERBOSE(4, "  VW :: Context feature [" << i << "] :: " << contextFeatures[i]->GetFFName() << "\n");
+        VERBOSE(5, "  VW :: Context feature [" << i << "] :: " << contextFeatures[i]->GetFFName() << "\n");
         (*contextFeatures[i])(input, targetContext, contextAlignment, classifier, dummyVector);
       }
 
@@ -301,14 +312,16 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
         // extract target-side features for each topt
         const TargetPhrase &targetPhrase = translationOptionList.Get(toptIdx)->GetTargetPhrase();
+        VERBOSE(4, "  VW :: Target[" << toptIdx << "] :: " << targetPhrase << "\n");
+
         for(size_t i = 0; i < targetFeatures.size(); ++i) {
-          VERBOSE(4, "  VW :: Target feature [" << toptIdx << "," << i << "] :: " << targetFeatures[i]->GetFFName() << "\n");
+          VERBOSE(5, "  VW :: Target feature [" << toptIdx << "," << i << "] :: " << targetFeatures[i]->GetFFName() << "\n");
           (*targetFeatures[i])(input, targetPhrase, classifier, dummyVector);
         }
 
         // extract edit features for each topt
         for(size_t i = 0; i < editFeatures.size(); ++i) {
-          VERBOSE(4, "  VW :: Edit feature [" << toptIdx << "," << i << "] :: " << editFeatures[i]->GetFFName() << "\n");
+          VERBOSE(5, "  VW :: Edit feature [" << toptIdx << "," << i << "] :: " << editFeatures[i]->GetFFName() << "\n");
           (*editFeatures[i])(input, sourceRange, targetPhrase, classifier, dummyVector);
         }
 
