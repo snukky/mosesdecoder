@@ -330,7 +330,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         // extract edit features for each topt
         for(size_t i = 0; i < editFeatures.size(); ++i) {
           VERBOSE(5, "  VW :: Edit feature [" << toptIdx << "," << i << "] :: " << editFeatures[i]->GetFFName() << "\n");
-          (*editFeatures[i])(input, sourceRange, targetPhrase, classifier, dummyVector);
+          (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, dummyVector);
         }
 
         bool isCorrect = correct[toptIdx] && startsAt[toptIdx] == currentStart;
@@ -375,7 +375,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       // extract edit features for each topt
       for(size_t i = 0; i < editFeatures.size(); ++i)
         // TODO: edit features are added into target feature vector - is it correct?
-        (*editFeatures[i])(input, sourceRange, targetPhrase, classifier, outFeaturesTargetNamespace);
+        (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, outFeaturesTargetNamespace);
 
       // cache the extracted target features (i.e. features associated with given topt)
       // for future use at decoding time

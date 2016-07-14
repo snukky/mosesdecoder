@@ -144,7 +144,9 @@ public:
   // Overload to process target-dependent features with source information.
   virtual void operator()(const InputType &input
                           , const Range &sourceRange
+                          , const CWordPos &sourceCWord
                           , const TargetPhrase &targetPhrase
+                          , const CWordPos &targetCWord
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const = 0;
 

@@ -18,33 +18,25 @@ public:
 
   void operator()(const InputType &input
                   , const Range &sourceRange
+                  , const CWordPos& sourceCWord
                   , const TargetPhrase &targetPhrase
+                  , const CWordPos& targetCWord
                   , Discriminative::Classifier &classifier
                   , Discriminative::FeatureVector &outFeatures) const {
 
-    // only substitutions and insertions are taken into account
-    for (size_t i = 0; i < targetPhrase.GetSize(); i++) {
-      std::string tWord = GetTargetWord(targetPhrase, i);
-      if (classifier.GetConfusionSet().Has(tWord)) {
-        // TODO: make it efficient?
-        std::vector<std::string> sWords =
-          GetAlignedSourceWords(targetPhrase, sourceRange, input, i);
+    // nothing to do as no confusion word is found in the input
+    if (! sourceCWord.IsSet() || ! targetCWord.IsSet())
+      return;
 
-        bool isAdded = false;
-        for (size_t j = 0; j < sWords.size(); ++j) {
-          if (classifier.GetConfusionSet().Has(sWords[j])) {
-            outFeatures.push_back(classifier.AddLabelDependentFeature(
-                "epair^" + sWords[j] + "=>" + tWord));
-            isAdded = true;
-            // take only the first confusion word and do not process further
-            break;
-          }
-        }
-        if (! isAdded)
-          outFeatures.push_back(classifier.AddLabelDependentFeature(
-              "epair^<null>=>" + tWord));
-      }
-    }
+    outFeatures.push_back(classifier.AddLabelDependentFeature("epair^" +
+          (sourceCWord.IsNull()
+            ? "<null>"
+            : GetSourceWord(input, sourceRange.GetStartPos() + sourceCWord.i)) +
+          "->" +
+          (targetCWord.IsNull()
+            ? "<null>"
+            : GetTargetWord(targetPhrase, targetCWord.i))
+        ));
   }
 
   virtual void SetParameter(const std::string& key, const std::string& value) {

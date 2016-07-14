@@ -46,7 +46,9 @@ public:
 
   virtual void operator()(const InputType &input
                           , const Range &sourceRange
+                          , const CWordPos &sourceCWord
                           , const TargetPhrase &targetPhrase
+                          , const CWordPos &targetCWord
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const {
   }

@@ -92,12 +92,14 @@
 #include "moses/FF/VW/VWFeatureTargetPhraseInternal.h"
 #include "moses/FF/VW/VWFeatureTargetPhraseScores.h"
 
-#include "moses/FF/VW/VWFeatureSourceConfusionWord.h"
-#include "moses/FF/VW/VWFeatureTargetConfusionWord.h"
-#include "moses/FF/VW/VWFeatureSourceAdjacentNGrams.h"
-#include "moses/FF/VW/VWFeatureEditPair.h"
-#include "moses/FF/VW/VWFeatureEditAdjacentNGrams.h"
+//#include "moses/FF/VW/VWFeatureSourceConfusionWord.h"
+//#include "moses/FF/VW/VWFeatureTargetConfusionWord.h"
+//#include "moses/FF/VW/VWFeatureSourceAdjacentNGrams.h"
+//#include "moses/FF/VW/VWFeatureEditAdjacentNGrams.h"
+#include "moses/FF/VW/VWFeatureCSetConfusionWord.h"
 #include "moses/FF/VW/VWFeatureCSetNGrams.h"
+#include "moses/FF/VW/VWFeatureEditConfusionWord.h"
+#include "moses/FF/VW/VWFeatureEditPair.h"
 #endif
 
 #ifdef HAVE_CMPH
@@ -325,12 +327,14 @@ FeatureRegistry::FeatureRegistry()
   MOSES_FNAME(VWFeatureSourceExternalFeatures);
   MOSES_FNAME(VWFeatureTargetPhraseScores);
 
-  MOSES_FNAME(VWFeatureSourceConfusionWord);
-  MOSES_FNAME(VWFeatureTargetConfusionWord);
-  MOSES_FNAME(VWFeatureSourceAdjacentNGrams);
-  MOSES_FNAME(VWFeatureEditPair);
-  MOSES_FNAME(VWFeatureEditAdjacentNGrams);
+  //MOSES_FNAME(VWFeatureSourceConfusionWord);
+  //MOSES_FNAME(VWFeatureTargetConfusionWord);
+  //MOSES_FNAME(VWFeatureSourceAdjacentNGrams);
+  //MOSES_FNAME(VWFeatureEditAdjacentNGrams);
+  MOSES_FNAME(VWFeatureCSetConfusionWord);
   MOSES_FNAME(VWFeatureCSetNGrams);
+  MOSES_FNAME(VWFeatureEditConfusionWord);
+  MOSES_FNAME(VWFeatureEditPair);
 #endif
 
 #ifdef HAVE_CMPH

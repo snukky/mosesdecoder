@@ -133,7 +133,8 @@ public:
       // TODO: make it better, for example, the target with the best score
       // should be taken
       if (sourcePosStart == -1) {
-        info.sourcePos = info.targetPos.begin()->second;
+        const CWordPos& pos = info.targetPos.begin()->second;
+        info.sourcePos = CWordPos(pos.i, pos.i - 1);
       } else {
         info.sourcePos = CWordPos(sourcePosStart, sourcePosEnd);
       }
