@@ -206,6 +206,8 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
   // which feature functions do we use (on the source and target side)
   const std::vector<VWFeatureBase*>& sourceFeatures =
     VWFeatureBase::GetSourceFeatures(GetScoreProducerDescription());
+  const std::vector<VWFeatureBase*>& csetFeatures =
+    VWFeatureBase::GetCSetFeatures(GetScoreProducerDescription());
   const std::vector<VWFeatureBase*>& contextFeatures =
     VWFeatureBase::GetTargetContextFeatures(GetScoreProducerDescription());
   const std::vector<VWFeatureBase*>& targetFeatures =
@@ -270,19 +272,25 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       // this is training time, simply store everything in this dummyVector
       Discriminative::FeatureVector dummyVector;
 
+      // TODO: delete
       VERBOSE(4, " VW :: Source :: ");
       for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
         VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
       VERBOSE(4, "\n");
 
-      //ConfusionWordFinder finder(classifier.GetConfusionSet());
-      //CWordInfo cwInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
-      //VERBOSE(4, "  VW :: CWordInfo :: " << cwInfo << "\n");
-
       // extract source side features
       for(size_t i = 0; i < sourceFeatures.size(); ++i) {
         VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << sourceFeatures[i]->GetFFName() << "\n");
         (*sourceFeatures[i])(input, sourceRange, classifier, dummyVector);
+      }
+
+      ConfusionWordFinder finder(classifier.GetConfusionSet());
+      CWordInfo cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
+      VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
+
+      for(size_t i = 0; i < csetFeatures.size(); ++i) {
+        VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << csetFeatures[i]->GetFFName() << "\n");
+        (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, dummyVector);
       }
 
       // build target-side context
@@ -341,9 +349,19 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
     Discriminative::FeatureVector outFeaturesSourceNamespace;
 
+    // TODO: check the requirement if a confusion set is set
+    ConfusionWordFinder finder(classifier.GetConfusionSet());
+    CWordInfo cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
+    VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
+
     // extract source side features
     for(size_t i = 0; i < sourceFeatures.size(); ++i)
       (*sourceFeatures[i])(input, sourceRange, classifier, outFeaturesSourceNamespace);
+
+    // TODO: cset features are added into source feature vector - is it correct?
+    // TODO: check the requirement if a confusion set is set
+    for(size_t i = 0; i < csetFeatures.size(); ++i)
+      (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, outFeaturesSourceNamespace);
 
     for (size_t toptIdx = 0; toptIdx < translationOptionList.size(); toptIdx++) {
       const TranslationOption *topt = translationOptionList.Get(toptIdx);

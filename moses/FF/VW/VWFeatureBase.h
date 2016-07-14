@@ -9,11 +9,14 @@
 #include "moses/Util.h"
 #include "moses/FF/StatelessFeatureFunction.h"
 
+#include "moses/FF/VW/ConfusionWordFinder.h"
+
 namespace Moses
 {
 
 enum VWFeatureType {
   vwft_source,
+  vwft_sourceCSet,
   vwft_target,
   vwft_targetContext,
   vwft_edit,
@@ -79,6 +82,11 @@ public:
     return s_sourceFeatures[name];
   }
 
+  // Return only source-dependent classifier features that use a confusion set
+  static const std::vector<VWFeatureBase*>& GetCSetFeatures(std::string name = "VW0") {
+    return s_csetFeatures[name];
+  }
+
   // Return only target-context classifier features
   static const std::vector<VWFeatureBase*>& GetTargetContextFeatures(std::string name = "VW0") {
     // don't throw an exception when there are no target-context features, this feature type is not mandatory
@@ -106,6 +114,12 @@ public:
   // source sentence word range.
   virtual void operator()(const InputType &input
                           , const Range &sourceRange
+                          , Discriminative::Classifier &classifier
+                          , Discriminative::FeatureVector &outFeatures) const = 0;
+
+  virtual void operator()(const InputType &input
+                          , const Range &sourceRange
+                          , const CWordInfo &cWordInfo
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const = 0;
 
@@ -148,6 +162,8 @@ protected:
 
       if(m_featureType == vwft_source) {
         s_sourceFeatures[*it].push_back(this);
+      } else if (m_featureType == vwft_sourceCSet) {
+        s_csetFeatures[*it].push_back(this);
       } else if (m_featureType == vwft_edit) {
         s_editFeatures[*it].push_back(this);
       } else if (m_featureType == vwft_targetContext) {
@@ -171,6 +187,7 @@ private:
   VWFeatureType m_featureType;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_features;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_sourceFeatures;
+  static std::map<std::string, std::vector<VWFeatureBase*> > s_csetFeatures;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_targetContextFeatures;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_targetFeatures;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_editFeatures;

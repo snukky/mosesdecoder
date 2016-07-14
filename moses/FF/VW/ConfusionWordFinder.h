@@ -30,9 +30,13 @@ struct CWordPos {
   inline bool IsNull() const {
     return i == j+1;
   }
+
+  inline size_t Size() const {
+    return i - j + 1;
+  }
 };
 
-std::ostream& operator << (std::ostream& out, const CWordPos& pos)
+inline std::ostream& operator << (std::ostream& out, const CWordPos& pos)
 {
   out << "(" << pos.i << "," << pos.j << ")";
   return out;
@@ -45,13 +49,13 @@ struct CWordInfo {
   // positions of confusion words in specified targets
   std::map<size_t, CWordPos> targetPos;
 
-  inline bool HasConfusionWord() const {
-    return ! targetPos.empty();
+  inline bool NotFound() const {
+    return targetPos.empty();
   }
 
 };
 
-std::ostream& operator << (std::ostream& out, const CWordInfo& info)
+inline std::ostream& operator << (std::ostream& out, const CWordInfo& info)
 {
   out << "Source: " << info.sourcePos << " Targets: ";
   for (std::map<size_t, CWordPos>::const_iterator it = info.targetPos.begin(); it != info.targetPos.end(); ++it)

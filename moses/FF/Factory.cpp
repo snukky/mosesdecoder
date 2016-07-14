@@ -97,6 +97,7 @@
 #include "moses/FF/VW/VWFeatureSourceAdjacentNGrams.h"
 #include "moses/FF/VW/VWFeatureEditPair.h"
 #include "moses/FF/VW/VWFeatureEditAdjacentNGrams.h"
+#include "moses/FF/VW/VWFeatureCSetNGrams.h"
 #endif
 
 #ifdef HAVE_CMPH
@@ -329,6 +330,7 @@ FeatureRegistry::FeatureRegistry()
   MOSES_FNAME(VWFeatureSourceAdjacentNGrams);
   MOSES_FNAME(VWFeatureEditPair);
   MOSES_FNAME(VWFeatureEditAdjacentNGrams);
+  MOSES_FNAME(VWFeatureCSetNGrams);
 #endif
 
 #ifdef HAVE_CMPH

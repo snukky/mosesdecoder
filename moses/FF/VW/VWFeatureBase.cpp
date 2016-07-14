@@ -8,6 +8,7 @@ namespace Moses
 {
 std::map<std::string, std::vector<VWFeatureBase*> > VWFeatureBase::s_features;
 std::map<std::string, std::vector<VWFeatureBase*> > VWFeatureBase::s_sourceFeatures;
+std::map<std::string, std::vector<VWFeatureBase*> > VWFeatureBase::s_csetFeatures;
 std::map<std::string, std::vector<VWFeatureBase*> > VWFeatureBase::s_targetContextFeatures;
 std::map<std::string, std::vector<VWFeatureBase*> > VWFeatureBase::s_targetFeatures;
 std::map<std::string, std::vector<VWFeatureBase*> > VWFeatureBase::s_editFeatures;

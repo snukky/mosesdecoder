@@ -35,6 +35,13 @@ public:
 
   virtual void operator()(const InputType &input
                           , const Range &sourceRange
+                          , const CWordInfo &cWordInfo
+                          , Discriminative::Classifier &classifier
+                          , Discriminative::FeatureVector &outFeatures) const {
+  }
+
+  virtual void operator()(const InputType &input
+                          , const Range &sourceRange
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const {
   }
