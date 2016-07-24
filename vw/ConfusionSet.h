@@ -26,8 +26,6 @@ public:
   }
 
   bool Has(const std::string& word) const {
-    //FIXME
-    //std::cerr << "    CSet :: " << ToString() << " :: Has " << word << "? =" << result << "\n";
     return m_confusionWords.find(word) != m_confusionWords.end();
   }
 

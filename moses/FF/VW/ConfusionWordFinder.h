@@ -49,10 +49,12 @@ struct CWordInfo {
   // positions of confusion words in specified targets
   std::map<size_t, CWordPos> targetPos;
 
+  inline bool IsFound() const {
+    return ! targetPos.empty();
+  }
   inline bool NotFound() const {
     return targetPos.empty();
   }
-
 };
 
 inline std::ostream& operator << (std::ostream& out, const CWordInfo& info)
@@ -77,6 +79,8 @@ public:
       , const TranslationOptionList &translationOptionList) {
 
     CWordInfo info;
+    if (m_confusionSet.Empty())
+      return info;
 
     // get source string without confusion words
     int sourcePosStart = -1, sourcePosEnd = -1;
@@ -130,9 +134,9 @@ public:
     if (! info.targetPos.empty()) {
       // if the source position is not set, update it with the position of a
       // random target (e.g. the first one)
-      // TODO: make it better, for example, the target with the best score
-      // should be taken
       if (sourcePosStart == -1) {
+        // TODO: make it better, for example, the target with the best score
+        // should be taken
         const CWordPos& pos = info.targetPos.begin()->second;
         info.sourcePos = CWordPos(pos.i, pos.i - 1);
       } else {

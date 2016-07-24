@@ -195,13 +195,14 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
     , const TranslationOptionList &translationOptionList) const {
 
   Discriminative::Classifier &classifier = *m_tlsClassifier->GetStored();
+  // set confusion set if it's not
   if (! m_confusionSet.empty() && classifier.GetConfusionSet().Empty())
     classifier.GetConfusionSet().Reset(m_confusionSet);
 
   if (translationOptionList.size() == 0)
     return; // nothing to do
 
-  VERBOSE(3, "VW :: Evaluating translation options\n");
+  VERBOSE(3, "VW :: Evaluating translation options (with source context)\n");
 
   // which feature functions do we use (on the source and target side)
   const std::vector<VWFeatureBase*>& sourceFeatures =
@@ -272,11 +273,13 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       // this is training time, simply store everything in this dummyVector
       Discriminative::FeatureVector dummyVector;
 
-      // TODO: delete
-      VERBOSE(4, " VW :: Source :: ");
-      for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
-        VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
-      VERBOSE(4, "\n");
+      // TODO: remove this debug
+      IFVERBOSE(4) {
+        VERBOSE(4, " VW :: Source :: " << input << ":: ");
+        for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
+          VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
+        VERBOSE(4, "\n");
+      }
 
       // extract source side features
       for(size_t i = 0; i < sourceFeatures.size(); ++i) {
@@ -284,13 +287,18 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         (*sourceFeatures[i])(input, sourceRange, classifier, dummyVector);
       }
 
-      ConfusionWordFinder finder(classifier.GetConfusionSet());
-      CWordInfo cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
-      VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
+      // find confusion words
+      CWordInfo cWordInfo;
+      if (! m_confusionSet.empty()) {
+        ConfusionWordFinder finder(classifier.GetConfusionSet());
+        cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
+        VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
 
-      for(size_t i = 0; i < csetFeatures.size(); ++i) {
-        VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << csetFeatures[i]->GetFFName() << "\n");
-        (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, dummyVector);
+        // extract confusion-set-based source-side features
+        for(size_t i = 0; i < csetFeatures.size(); ++i) {
+          VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << csetFeatures[i]->GetFFName() << "\n");
+          (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, dummyVector);
+        }
       }
 
       // build target-side context
@@ -327,11 +335,12 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
           (*targetFeatures[i])(input, targetPhrase, classifier, dummyVector);
         }
 
-        // extract edit features for each topt
-        for(size_t i = 0; i < editFeatures.size(); ++i) {
-          VERBOSE(5, "  VW :: Edit feature [" << toptIdx << "," << i << "] :: " << editFeatures[i]->GetFFName() << "\n");
-          (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, dummyVector);
-        }
+        // extract target-side edit features
+        if (cWordInfo.IsFound())
+          for(size_t i = 0; i < editFeatures.size(); ++i) {
+            VERBOSE(5, "  VW :: Edit feature [" << toptIdx << "," << i << "] :: " << editFeatures[i]->GetFFName() << "\n");
+            (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, dummyVector);
+          }
 
         bool isCorrect = correct[toptIdx] && startsAt[toptIdx] == currentStart;
         float loss = (*m_trainingLoss)(targetPhrase, correctPhrase, isCorrect);
@@ -349,19 +358,21 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
     Discriminative::FeatureVector outFeaturesSourceNamespace;
 
-    // TODO: check the requirement if a confusion set is set
-    ConfusionWordFinder finder(classifier.GetConfusionSet());
-    CWordInfo cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
-    VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
-
     // extract source side features
     for(size_t i = 0; i < sourceFeatures.size(); ++i)
       (*sourceFeatures[i])(input, sourceRange, classifier, outFeaturesSourceNamespace);
 
-    // TODO: cset features are added into source feature vector - is it correct?
-    // TODO: check the requirement if a confusion set is set
-    for(size_t i = 0; i < csetFeatures.size(); ++i)
-      (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, outFeaturesSourceNamespace);
+    // find confusion words
+    CWordInfo cWordInfo;
+    if (! m_confusionSet.empty()) {
+      ConfusionWordFinder finder(classifier.GetConfusionSet());
+      cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
+      VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
+
+      // extract source-side confusion-set-based features
+      for(size_t i = 0; i < csetFeatures.size(); ++i)
+        (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, outFeaturesSourceNamespace);
+    }
 
     for (size_t toptIdx = 0; toptIdx < translationOptionList.size(); toptIdx++) {
       const TranslationOption *topt = translationOptionList.Get(toptIdx);
@@ -372,9 +383,8 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       for(size_t i = 0; i < targetFeatures.size(); ++i)
         (*targetFeatures[i])(input, targetPhrase, classifier, outFeaturesTargetNamespace);
 
-      // extract edit features for each topt
+      // extract target-side edit features
       for(size_t i = 0; i < editFeatures.size(); ++i)
-        // TODO: edit features are added into target feature vector - is it correct?
         (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, outFeaturesTargetNamespace);
 
       // cache the extracted target features (i.e. features associated with given topt)
