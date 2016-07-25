@@ -408,14 +408,15 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, outFeaturesSourceNamespace);
 
     for (size_t toptIdx = 0; toptIdx < translationOptionList.size(); toptIdx++) {
-      // TODO: I have commented it as setting the zero score actually make this
-      // a positive example (scores are negative). This value should favorize
-      // scored targets and penalize skipped targets, so quite high positive
-      // value should be used.
-      //
+      // TODO: Previously, I have commented it out  as setting the zero score
+      // actually make this a positive example (scores are negative). This
+      // value should favorize scored targets and penalize skipped targets, so
+      // quite high positive value should be used.
+      // TODO: handle it
+
       // skip target phrase if does not contain a confusion word
       //if (m_csetFilter && ! cWordInfo.targetPos[toptIdx].IsSet()) {
-        //losses[toptIdx] = 0.0f;
+        //losses[toptIdx] = NO_CONFUSION_WORD_PENALTY;
         //continue;
       //}
 

@@ -178,6 +178,7 @@ private:
   bool m_csetFilter;
 
   // an arbitrary value to penalize target phrases without a confusion word
+  // TODO: use it
   static const float NO_CONFUSION_WORD_PENALTY = 10.0f;
 
   // BOS token, all factors

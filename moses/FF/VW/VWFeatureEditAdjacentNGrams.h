@@ -22,8 +22,7 @@ public:
                   , Discriminative::Classifier &classifier
                   , Discriminative::FeatureVector &outFeatures) const {
 
-    // TODO
-    // this feature requires non-empty confusion set
+    // TODO: this feature requires non-empty confusion set
     //classifier.GetConfusionSet().ThrowIfEmpty();
 
     size_t leftContextLastIdx = sourceRange.GetStartPos() - 1;

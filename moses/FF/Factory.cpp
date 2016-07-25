@@ -99,9 +99,12 @@
 #include "moses/FF/VW/VWFeatureSourceCSetIndicator.h"
 #include "moses/FF/VW/VWFeatureCSetConfusionWord.h"
 #include "moses/FF/VW/VWFeatureCSetNGrams.h"
+#include "moses/FF/VW/VWFeatureCSetPosition.h"
 #include "moses/FF/VW/VWFeatureTargetCSetIndicator.h"
 #include "moses/FF/VW/VWFeatureEditConfusionWord.h"
 #include "moses/FF/VW/VWFeatureEditPair.h"
+#include "moses/FF/VW/VWFeatureEditPosition.h"
+#include "moses/FF/VW/VWFeatureEditRelativePosition.h"
 #endif
 
 #ifdef HAVE_CMPH
@@ -336,9 +339,12 @@ FeatureRegistry::FeatureRegistry()
   MOSES_FNAME(VWFeatureSourceCSetIndicator);
   MOSES_FNAME(VWFeatureCSetConfusionWord);
   MOSES_FNAME(VWFeatureCSetNGrams);
+  MOSES_FNAME(VWFeatureCSetPosition);
   MOSES_FNAME(VWFeatureTargetCSetIndicator);
   MOSES_FNAME(VWFeatureEditConfusionWord);
   MOSES_FNAME(VWFeatureEditPair);
+  MOSES_FNAME(VWFeatureEditPosition);
+  MOSES_FNAME(VWFeatureEditRelativePosition);
 #endif
 
 #ifdef HAVE_CMPH

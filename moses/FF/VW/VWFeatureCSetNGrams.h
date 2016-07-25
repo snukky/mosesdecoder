@@ -28,8 +28,7 @@ public:
                   , Discriminative::Classifier &classifier
                   , Discriminative::FeatureVector &outFeatures) const {
 
-    // TODO
-    // this feature requires non-empty confusion set
+    // TODO: this feature requires non-empty confusion set
     //classifier.GetConfusionSet().ThrowIfEmpty();
 
     // nothing to do as no confusion word is found in the input
