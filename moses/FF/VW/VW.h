@@ -171,8 +171,14 @@ private:
   std::string m_modelPath; // path to the VW model file; at training time, this is where extracted features are stored
   std::string m_vwOptions; // options for Vowpal Wabbit
 
-  // Set of confusion words
+  // set of confusion words
   std::set<std::string> m_confusionSet;
+
+  // true means do not score phrases that do not contain a confusion word
+  bool m_csetFilter;
+
+  // an arbitrary value to penalize target phrases without a confusion word
+  static const float NO_CONFUSION_WORD_PENALTY = 10.0f;
 
   // BOS token, all factors
   Word m_sentenceStartWord;

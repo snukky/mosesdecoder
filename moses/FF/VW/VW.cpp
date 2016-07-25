@@ -38,6 +38,7 @@ VW::VW(const std::string &line)
   : StatefulFeatureFunction(1, line)
   , TLSTargetSentence(this)
   , m_train(false)
+  , m_csetFilter(false)
   , m_sentenceStartWord(Word()) {
   ReadParameters();
   Discriminative::ClassifierFactory *classifierFactory = m_train
@@ -266,25 +267,12 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         continue;
       }
 
-      // the first correct topt can be used by some loss functions
-      const TargetPhrase &correctPhrase = translationOptionList.Get(firstCorrect)->GetTargetPhrase();
-
-      // feature extraction *at prediction time* outputs feature hashes which can be cached;
-      // this is training time, simply store everything in this dummyVector
-      Discriminative::FeatureVector dummyVector;
-
       // TODO: remove this debug
       IFVERBOSE(4) {
         VERBOSE(4, " VW :: Source :: " << input << ":: ");
         for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
           VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
         VERBOSE(4, "\n");
-      }
-
-      // extract source side features
-      for(size_t i = 0; i < sourceFeatures.size(); ++i) {
-        VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << sourceFeatures[i]->GetFFName() << "\n");
-        (*sourceFeatures[i])(input, sourceRange, classifier, dummyVector);
       }
 
       // find confusion words
@@ -294,6 +282,26 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
         VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
 
+        // do not train if the option cset-filter is set
+        if (m_csetFilter && ! cWordInfo.IsFound()) {
+          continue;
+        }
+      }
+
+      // the first correct topt can be used by some loss functions
+      const TargetPhrase &correctPhrase = translationOptionList.Get(firstCorrect)->GetTargetPhrase();
+
+      // feature extraction *at prediction time* outputs feature hashes which can be cached;
+      // this is training time, simply store everything in this dummyVector
+      Discriminative::FeatureVector dummyVector;
+
+      // extract source side features
+      for(size_t i = 0; i < sourceFeatures.size(); ++i) {
+        VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << sourceFeatures[i]->GetFFName() << "\n");
+        (*sourceFeatures[i])(input, sourceRange, classifier, dummyVector);
+      }
+
+      if (! m_confusionSet.empty()) {
         // extract confusion-set-based source-side features
         for(size_t i = 0; i < csetFeatures.size(); ++i) {
           VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << csetFeatures[i]->GetFFName() << "\n");
@@ -321,6 +329,13 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
       // go over topts, extract target side features and train the classifier
       for (size_t toptIdx = 0; toptIdx < translationOptionList.size(); toptIdx++) {
+        bool isCorrect = correct[toptIdx] && startsAt[toptIdx] == currentStart;
+
+        // Skip target phrase if does not contain a confusion word, however, we
+        // want to keep the correct target phrase.
+        if (m_csetFilter && ! isCorrect && ! cWordInfo.targetPos[toptIdx].IsSet()) {
+          continue;
+        }
 
         // this topt was discarded by leaving one out
         if (! keep[toptIdx])
@@ -342,7 +357,6 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
             (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, dummyVector);
           }
 
-        bool isCorrect = correct[toptIdx] && startsAt[toptIdx] == currentStart;
         float loss = (*m_trainingLoss)(targetPhrase, correctPhrase, isCorrect);
 
         // train classifier on current example
@@ -354,13 +368,12 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
     // predict using a trained classifier, use this in decoding (=at test time)
     //
 
-    std::vector<float> losses(translationOptionList.size());
-
-    Discriminative::FeatureVector outFeaturesSourceNamespace;
-
-    // extract source side features
-    for(size_t i = 0; i < sourceFeatures.size(); ++i)
-      (*sourceFeatures[i])(input, sourceRange, classifier, outFeaturesSourceNamespace);
+    IFVERBOSE(4) {
+      VERBOSE(4, " VW :: Source :: " << input << ":: ");
+      for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
+        VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
+      VERBOSE(4, "\n");
+    }
 
     // find confusion words
     CWordInfo cWordInfo;
@@ -369,12 +382,43 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
       VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
 
-      // extract source-side confusion-set-based features
-      for(size_t i = 0; i < csetFeatures.size(); ++i)
-        (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, outFeaturesSourceNamespace);
+      if (m_csetFilter && ! cWordInfo.IsFound()) {
+        // TODO: Currently, scores are not updated in source phrases that
+        // should be skipped. Is this a correct behavior (probably not)?
+        // Maybe a constant score should be added to each topt? E.g. something
+        // similar to the LOWEST_SCORE from moses/Util.h?
+        // Does the score for skipped sources can be used to promote sources
+        // that contain a confusion word? (probably yes)
+        VERBOSE(4, "VW :: skipping source phrase, no confusion word found in the source phrase\n");
+        return;
+      }
     }
 
+    std::vector<float> losses(translationOptionList.size());
+
+    Discriminative::FeatureVector outFeaturesSourceNamespace;
+
+    // extract source side features
+    for(size_t i = 0; i < sourceFeatures.size(); ++i)
+      (*sourceFeatures[i])(input, sourceRange, classifier, outFeaturesSourceNamespace);
+
+    // extract source-side confusion-set-based features
+    if (cWordInfo.IsFound())
+      for(size_t i = 0; i < csetFeatures.size(); ++i)
+        (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, outFeaturesSourceNamespace);
+
     for (size_t toptIdx = 0; toptIdx < translationOptionList.size(); toptIdx++) {
+      // TODO: I have commented it as setting the zero score actually make this
+      // a positive example (scores are negative). This value should favorize
+      // scored targets and penalize skipped targets, so quite high positive
+      // value should be used.
+      //
+      // skip target phrase if does not contain a confusion word
+      //if (m_csetFilter && ! cWordInfo.targetPos[toptIdx].IsSet()) {
+        //losses[toptIdx] = 0.0f;
+        //continue;
+      //}
+
       const TranslationOption *topt = translationOptionList.Get(toptIdx);
       const TargetPhrase &targetPhrase = topt->GetTargetPhrase();
       Discriminative::FeatureVector outFeaturesTargetNamespace;
@@ -384,8 +428,9 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         (*targetFeatures[i])(input, targetPhrase, classifier, outFeaturesTargetNamespace);
 
       // extract target-side edit features
-      for(size_t i = 0; i < editFeatures.size(); ++i)
-        (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, outFeaturesTargetNamespace);
+      if (cWordInfo.IsFound())
+        for(size_t i = 0; i < editFeatures.size(); ++i)
+          (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, outFeaturesTargetNamespace);
 
       // cache the extracted target features (i.e. features associated with given topt)
       // for future use at decoding time
@@ -395,6 +440,8 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
       // get classifier score
       losses[toptIdx] = classifier.Predict(MakeTargetLabel(targetPhrase));
+
+      VERBOSE(4, "  VW :: targetPhrase[" << toptIdx << "]= " << targetPhrase << "\n");
     }
 
     // normalize classifier scores to get a probability distribution
@@ -411,6 +458,8 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
         ScoreComponentCollection &scoreBreakDown = topt->GetScoreBreakdown();
         scoreBreakDown.PlusEquals(this, newScores);
+
+        VERBOSE(4, "   VW :: toptIdx= " << toptIdx << " raw loss= " << rawLosses[toptIdx] << " :: prob. loss= " << losses[toptIdx] << " :: new score= " << newScores[0] << "\n");
 
         topt->UpdateScore();
       } else {
@@ -464,6 +513,8 @@ void VW::SetParameter(const std::string& key, const std::string& value) {
     }
   } else if (key == "cset") {
     boost::split(m_confusionSet, value, boost::is_any_of(","));
+  } else if (key == "cset-filter") {
+    m_csetFilter = Scan<bool>(value);
   } else {
     StatefulFeatureFunction::SetParameter(key, value);
   }
