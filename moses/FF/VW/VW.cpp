@@ -39,6 +39,7 @@ VW::VW(const std::string &line)
   , TLSTargetSentence(this)
   , m_train(false)
   , m_csetFilter(false)
+  , m_csetPenalty(NO_CONFUSION_WORD_PENALTY)
   , m_sentenceStartWord(Word()) {
   ReadParameters();
   Discriminative::ClassifierFactory *classifierFactory = m_train
@@ -377,21 +378,14 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
     // find confusion words
     CWordInfo cWordInfo;
+    bool skipSource = false;
+
     if (! m_confusionSet.empty()) {
       ConfusionWordFinder finder(classifier.GetConfusionSet());
       cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
       VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
-
-      if (m_csetFilter && ! cWordInfo.IsFound()) {
-        // TODO: Currently, scores are not updated in source phrases that
-        // should be skipped. Is this a correct behavior (probably not)?
-        // Maybe a constant score should be added to each topt? E.g. something
-        // similar to the LOWEST_SCORE from moses/Util.h?
-        // Does the score for skipped sources can be used to promote sources
-        // that contain a confusion word? (probably yes)
-        VERBOSE(4, "VW :: skipping source phrase, no confusion word found in the source phrase\n");
-        return;
-      }
+      // skip translation options if no confusion word is found
+      skipSource = m_csetFilter && ! cWordInfo.IsFound();
     }
 
     std::vector<float> losses(translationOptionList.size());
@@ -399,8 +393,9 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
     Discriminative::FeatureVector outFeaturesSourceNamespace;
 
     // extract source side features
-    for(size_t i = 0; i < sourceFeatures.size(); ++i)
-      (*sourceFeatures[i])(input, sourceRange, classifier, outFeaturesSourceNamespace);
+    if (! skipSource)
+      for(size_t i = 0; i < sourceFeatures.size(); ++i)
+        (*sourceFeatures[i])(input, sourceRange, classifier, outFeaturesSourceNamespace);
 
     // extract source-side confusion-set-based features
     if (cWordInfo.IsFound())
@@ -408,17 +403,13 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, outFeaturesSourceNamespace);
 
     for (size_t toptIdx = 0; toptIdx < translationOptionList.size(); toptIdx++) {
-      // TODO: Previously, I have commented it out  as setting the zero score
-      // actually make this a positive example (scores are negative). This
-      // value should favorize scored targets and penalize skipped targets, so
-      // quite high positive value should be used.
-      // TODO: handle it
-
       // skip target phrase if does not contain a confusion word
-      //if (m_csetFilter && ! cWordInfo.targetPos[toptIdx].IsSet()) {
-        //losses[toptIdx] = NO_CONFUSION_WORD_PENALTY;
-        //continue;
-      //}
+      bool skipTarget = m_csetFilter && ! cWordInfo.targetPos[toptIdx].IsSet();
+
+      if (skipSource || skipTarget) {
+        losses[toptIdx] = m_csetPenalty;
+        continue;
+      }
 
       const TranslationOption *topt = translationOptionList.Get(toptIdx);
       const TargetPhrase &targetPhrase = topt->GetTargetPhrase();
@@ -516,6 +507,8 @@ void VW::SetParameter(const std::string& key, const std::string& value) {
     boost::split(m_confusionSet, value, boost::is_any_of(","));
   } else if (key == "cset-filter") {
     m_csetFilter = Scan<bool>(value);
+  } else if (key == "cset-penalty") {
+    m_csetPenalty = Scan<float>(value);
   } else {
     StatefulFeatureFunction::SetParameter(key, value);
   }
