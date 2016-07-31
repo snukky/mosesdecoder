@@ -215,6 +215,8 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
     VWFeatureBase::GetTargetContextFeatures(GetScoreProducerDescription());
   const std::vector<VWFeatureBase*>& targetFeatures =
     VWFeatureBase::GetTargetFeatures(GetScoreProducerDescription());
+  const std::vector<VWFeatureBase*>& targetSourceFeatures =
+    VWFeatureBase::GetTargetSourceFeatures(GetScoreProducerDescription());
   const std::vector<VWFeatureBase*>& editFeatures =
     VWFeatureBase::GetEditFeatures(GetScoreProducerDescription());
 
@@ -350,6 +352,10 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
           VERBOSE(5, "  VW :: Target feature [" << toptIdx << "," << i << "] :: " << targetFeatures[i]->GetFFName() << "\n");
           (*targetFeatures[i])(input, targetPhrase, classifier, dummyVector);
         }
+        for(size_t i = 0; i < targetSourceFeatures.size(); ++i) {
+          VERBOSE(5, "  VW :: Target source feature [" << toptIdx << "," << i << "] :: " << targetSourceFeatures[i]->GetFFName() << "\n");
+          (*targetSourceFeatures[i])(input, sourceRange, targetPhrase, classifier, dummyVector);
+        }
 
         // extract target-side edit features
         if (cWordInfo.IsFound())
@@ -418,6 +424,8 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       // extract target-side features for each topt
       for(size_t i = 0; i < targetFeatures.size(); ++i)
         (*targetFeatures[i])(input, targetPhrase, classifier, outFeaturesTargetNamespace);
+      for(size_t i = 0; i < targetSourceFeatures.size(); ++i)
+        (*targetSourceFeatures[i])(input, sourceRange, targetPhrase, classifier, outFeaturesTargetNamespace);
 
       // extract target-side edit features
       if (cWordInfo.IsFound())

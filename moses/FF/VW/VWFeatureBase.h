@@ -18,6 +18,7 @@ enum VWFeatureType {
   vwft_source,
   vwft_sourceCSet,
   vwft_target,
+  vwft_targetSource,
   vwft_targetContext,
   vwft_edit,
 };
@@ -99,7 +100,12 @@ public:
     return s_targetFeatures[name];
   }
 
-  // Return only target-dependent-with-source classifier features
+  // Return only target-source classifier features
+  static const std::vector<VWFeatureBase*>& GetTargetSourceFeatures(std::string name = "VW0") {
+    return s_targetSourceFeatures[name];
+  }
+
+  // Return only target-source classifier features that use a confusion set
   static const std::vector<VWFeatureBase*>& GetEditFeatures(std::string name = "VW0") {
     // this feature type is not mandatory
     return s_editFeatures[name];
@@ -127,6 +133,12 @@ public:
   // every target phrase. One source word range will have at least one target
   // phrase, but may have more.
   virtual void operator()(const InputType &input
+                          , const TargetPhrase &targetPhrase
+                          , Discriminative::Classifier &classifier
+                          , Discriminative::FeatureVector &outFeatures) const = 0;
+
+  virtual void operator()(const InputType &input
+                          , const Range &sourceRange
                           , const TargetPhrase &targetPhrase
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const = 0;
@@ -166,6 +178,8 @@ protected:
         s_sourceFeatures[*it].push_back(this);
       } else if (m_featureType == vwft_sourceCSet) {
         s_csetFeatures[*it].push_back(this);
+      } else if (m_featureType == vwft_targetSource) {
+        s_targetSourceFeatures[*it].push_back(this);
       } else if (m_featureType == vwft_edit) {
         s_editFeatures[*it].push_back(this);
       } else if (m_featureType == vwft_targetContext) {
@@ -192,6 +206,7 @@ private:
   static std::map<std::string, std::vector<VWFeatureBase*> > s_csetFeatures;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_targetContextFeatures;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_targetFeatures;
+  static std::map<std::string, std::vector<VWFeatureBase*> > s_targetSourceFeatures;
   static std::map<std::string, std::vector<VWFeatureBase*> > s_editFeatures;
 
   static std::map<std::string, size_t> s_targetContextLength;

@@ -28,7 +28,7 @@ public:
   // Gets its pure virtual functions from VWFeatureBase
 
   virtual void operator()(const InputType &input
-                          , const TargetPhrase &targetPhrase
+                          , const Range &sourceRange
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const {
   }
@@ -41,7 +41,14 @@ public:
   }
 
   virtual void operator()(const InputType &input
+                          , const TargetPhrase &targetPhrase
+                          , Discriminative::Classifier &classifier
+                          , Discriminative::FeatureVector &outFeatures) const {
+  }
+
+  virtual void operator()(const InputType &input
                           , const Range &sourceRange
+                          , const TargetPhrase &targetPhrase
                           , Discriminative::Classifier &classifier
                           , Discriminative::FeatureVector &outFeatures) const {
   }

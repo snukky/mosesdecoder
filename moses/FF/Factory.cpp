@@ -104,6 +104,7 @@
 #include "moses/FF/VW/VWFeatureEditPair.h"
 #include "moses/FF/VW/VWFeatureEditPosition.h"
 #include "moses/FF/VW/VWFeatureEditRelativePosition.h"
+#include "moses/FF/VW/VWFeatureTgtSrcEditOps.h"
 #endif
 
 #ifdef HAVE_CMPH
@@ -343,6 +344,7 @@ FeatureRegistry::FeatureRegistry()
   MOSES_FNAME(VWFeatureEditPair);
   MOSES_FNAME(VWFeatureEditPosition);
   MOSES_FNAME(VWFeatureEditRelativePosition);
+  MOSES_FNAME(VWFeatureTgtSrcEditOps);
 #endif
 
 #ifdef HAVE_CMPH
