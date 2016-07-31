@@ -94,8 +94,7 @@
 
 //#include "moses/FF/VW/VWFeatureSourceConfusionWord.h"
 //#include "moses/FF/VW/VWFeatureTargetConfusionWord.h"
-//#include "moses/FF/VW/VWFeatureSourceAdjacentNGrams.h"
-//#include "moses/FF/VW/VWFeatureEditAdjacentNGrams.h"
+#include "moses/FF/VW/VWFeatureSourceNGrams.h"
 #include "moses/FF/VW/VWFeatureSourceCSetIndicator.h"
 #include "moses/FF/VW/VWFeatureCSetConfusionWord.h"
 #include "moses/FF/VW/VWFeatureCSetNGrams.h"
@@ -334,8 +333,7 @@ FeatureRegistry::FeatureRegistry()
 
   //MOSES_FNAME(VWFeatureSourceConfusionWord);
   //MOSES_FNAME(VWFeatureTargetConfusionWord);
-  //MOSES_FNAME(VWFeatureSourceAdjacentNGrams);
-  //MOSES_FNAME(VWFeatureEditAdjacentNGrams);
+  MOSES_FNAME(VWFeatureSourceNGrams);
   MOSES_FNAME(VWFeatureSourceCSetIndicator);
   MOSES_FNAME(VWFeatureCSetConfusionWord);
   MOSES_FNAME(VWFeatureCSetNGrams);
