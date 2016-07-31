@@ -271,19 +271,19 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       }
 
       // TODO: remove this debug
-      IFVERBOSE(4) {
-        VERBOSE(4, " VW :: Source :: " << input << ":: ");
-        for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
-          VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
-        VERBOSE(4, "\n");
-      }
+      //IFVERBOSE(4) {
+        //VERBOSE(4, " VW :: Source :: " << input << ":: ");
+        //for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
+          //VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
+        //VERBOSE(4, "\n");
+      //}
 
       // find confusion words
       CWordInfo cWordInfo;
       if (! m_confusionSet.empty()) {
         ConfusionWordFinder finder(classifier.GetConfusionSet());
         cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
-        VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
+        //VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
 
         // do not train if the option cset-filter is set
         if (m_csetFilter && ! cWordInfo.IsFound()) {
@@ -300,14 +300,14 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
       // extract source side features
       for(size_t i = 0; i < sourceFeatures.size(); ++i) {
-        VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << sourceFeatures[i]->GetFFName() << "\n");
+        //VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << sourceFeatures[i]->GetFFName() << "\n");
         (*sourceFeatures[i])(input, sourceRange, classifier, dummyVector);
       }
 
       if (! m_confusionSet.empty()) {
         // extract confusion-set-based source-side features
         for(size_t i = 0; i < csetFeatures.size(); ++i) {
-          VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << csetFeatures[i]->GetFFName() << "\n");
+          //VERBOSE(5, "  VW :: Source feature [" << i << "] :: " << csetFeatures[i]->GetFFName() << "\n");
           (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, dummyVector);
         }
       }
@@ -326,7 +326,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
       // extract target-context features
       for(size_t i = 0; i < contextFeatures.size(); ++i) {
-        VERBOSE(5, "  VW :: Context feature [" << i << "] :: " << contextFeatures[i]->GetFFName() << "\n");
+        //VERBOSE(5, "  VW :: Context feature [" << i << "] :: " << contextFeatures[i]->GetFFName() << "\n");
         (*contextFeatures[i])(input, targetContext, contextAlignment, classifier, dummyVector);
       }
 
@@ -346,21 +346,21 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
         // extract target-side features for each topt
         const TargetPhrase &targetPhrase = translationOptionList.Get(toptIdx)->GetTargetPhrase();
-        VERBOSE(4, "  VW :: Target[" << toptIdx << "] :: " << targetPhrase << "\n");
+        //VERBOSE(4, "  VW :: Target[" << toptIdx << "] :: " << targetPhrase << "\n");
 
         for(size_t i = 0; i < targetFeatures.size(); ++i) {
-          VERBOSE(5, "  VW :: Target feature [" << toptIdx << "," << i << "] :: " << targetFeatures[i]->GetFFName() << "\n");
+          //VERBOSE(5, "  VW :: Target feature [" << toptIdx << "," << i << "] :: " << targetFeatures[i]->GetFFName() << "\n");
           (*targetFeatures[i])(input, targetPhrase, classifier, dummyVector);
         }
         for(size_t i = 0; i < targetSourceFeatures.size(); ++i) {
-          VERBOSE(5, "  VW :: Target source feature [" << toptIdx << "," << i << "] :: " << targetSourceFeatures[i]->GetFFName() << "\n");
+          //VERBOSE(5, "  VW :: Target source feature [" << toptIdx << "," << i << "] :: " << targetSourceFeatures[i]->GetFFName() << "\n");
           (*targetSourceFeatures[i])(input, sourceRange, targetPhrase, classifier, dummyVector);
         }
 
         // extract target-side edit features
         if (cWordInfo.IsFound())
           for(size_t i = 0; i < editFeatures.size(); ++i) {
-            VERBOSE(5, "  VW :: Edit feature [" << toptIdx << "," << i << "] :: " << editFeatures[i]->GetFFName() << "\n");
+            //VERBOSE(5, "  VW :: Edit feature [" << toptIdx << "," << i << "] :: " << editFeatures[i]->GetFFName() << "\n");
             (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, dummyVector);
           }
 
@@ -375,12 +375,12 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
     // predict using a trained classifier, use this in decoding (=at test time)
     //
 
-    IFVERBOSE(4) {
-      VERBOSE(4, " VW :: Source :: " << input << ":: ");
-      for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
-        VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
-      VERBOSE(4, "\n");
-    }
+    //IFVERBOSE(4) {
+      //VERBOSE(4, " VW :: Source :: " << input << ":: ");
+      //for (size_t i = sourceRange.GetStartPos(); i <= sourceRange.GetEndPos(); ++i)
+        //VERBOSE(4, input.GetWord(i).GetString(0).as_string() << " ");
+      //VERBOSE(4, "\n");
+    //}
 
     // find confusion words
     CWordInfo cWordInfo;
@@ -389,7 +389,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
     if (! m_confusionSet.empty()) {
       ConfusionWordFinder finder(classifier.GetConfusionSet());
       cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
-      VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
+      //VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
       // skip translation options if no confusion word is found
       skipSource = m_csetFilter && ! cWordInfo.IsFound();
     }
@@ -441,7 +441,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       // get classifier score
       losses[toptIdx] = classifier.Predict(MakeTargetLabel(targetPhrase));
 
-      VERBOSE(4, "  VW :: targetPhrase[" << toptIdx << "]= " << targetPhrase << "\n");
+      //VERBOSE(4, "  VW :: targetPhrase[" << toptIdx << "]= " << targetPhrase << "\n");
     }
 
     // normalize classifier scores to get a probability distribution
@@ -459,7 +459,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         ScoreComponentCollection &scoreBreakDown = topt->GetScoreBreakdown();
         scoreBreakDown.PlusEquals(this, newScores);
 
-        VERBOSE(4, "   VW :: toptIdx= " << toptIdx << " raw loss= " << rawLosses[toptIdx] << " :: prob. loss= " << losses[toptIdx] << " :: new score= " << newScores[0] << "\n");
+        //VERBOSE(4, "   VW :: toptIdx= " << toptIdx << " raw loss= " << rawLosses[toptIdx] << " :: prob. loss= " << losses[toptIdx] << " :: new score= " << newScores[0] << "\n");
 
         topt->UpdateScore();
       } else {
