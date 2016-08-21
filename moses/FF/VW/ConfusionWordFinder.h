@@ -135,8 +135,13 @@ public:
       // if the source position is not set, update it with the position of a
       // random target (e.g. the first one)
       if (sourcePosStart == -1) {
-        // TODO: make it better, for example, the target with the best score
-        // should be taken
+        // TODO: make it better, for example, take the target with the best score
+        //
+        //size_t targetWithBestScore = 0;
+        //float bestScore = LOWEST_SCORE;
+        //for (size_t i = 0; i < info.targetPos.size(); ++i)
+          //break;
+
         const CWordPos& pos = info.targetPos.begin()->second;
         info.sourcePos = CWordPos(pos.i, pos.i - 1);
       } else {

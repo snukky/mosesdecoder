@@ -34,8 +34,10 @@
 namespace Moses
 {
 
+static int NUM_SCORE_COMPONENTS = 2;
+
 VW::VW(const std::string &line)
-  : StatefulFeatureFunction(1, line)
+  : StatefulFeatureFunction(NUM_SCORE_COMPONENTS, line)
   , TLSTargetSentence(this)
   , m_train(false)
   , m_csetFilter(false)
@@ -225,6 +227,9 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
   // only use stateful score computation when needed
   bool haveTargetContextFeatures = ! contextFeatures.empty();
 
+  if (haveTargetContextFeatures && ! m_confusionSet.empty())
+    TRACE_ERR("Target contect features are not supported by a confusion-set-based classifier.");
+
   const Range &sourceRange = translationOptionList.Get(0)->GetSourceWordsRange();
 
   if (m_train) {
@@ -409,9 +414,8 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         (*csetFeatures[i])(input, sourceRange, cWordInfo, classifier, outFeaturesSourceNamespace);
 
     for (size_t toptIdx = 0; toptIdx < translationOptionList.size(); toptIdx++) {
-      // skip target phrase if does not contain a confusion word
+      // skip target phrase if it does not contain any confusion word
       bool skipTarget = m_csetFilter && ! cWordInfo.targetPos[toptIdx].IsSet();
-
       if (skipSource || skipTarget) {
         losses[toptIdx] = m_csetPenalty;
         continue;
@@ -454,7 +458,15 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
       if (! haveTargetContextFeatures) {
         // no target context features; evaluate the FF now
         std::vector<float> newScores(m_numScoreComponents);
-        newScores[0] = FloorScore(TransformScore(losses[toptIdx]));
+
+        bool notScoredTarget = ! cWordInfo.targetPos[toptIdx].IsSet();
+        if (skipSource || notScoredTarget) {
+          newScores[0] = 0.0f;
+          newScores[1] = FloorScore(TransformScore(losses[toptIdx]));
+        } else {
+          newScores[0] = FloorScore(TransformScore(losses[toptIdx]));
+          newScores[1] = 0.0f;
+        }
 
         ScoreComponentCollection &scoreBreakDown = topt->GetScoreBreakdown();
         scoreBreakDown.PlusEquals(this, newScores);
@@ -478,6 +490,10 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
         float futureScore = rawLosses[toptIdx] - targetOnlyLoss;
         m_tlsFutureScores->GetStored()->insert(std::make_pair(toptHash, futureScore));
+
+        // TODO: Attention! The separate weight score for targets not scored by
+        // VW in confusion set mode are not implemented!  Implementation will
+        // require changes in EvaluateWhenApplied() method.
       }
     }
   }

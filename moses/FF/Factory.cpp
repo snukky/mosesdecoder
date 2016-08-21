@@ -92,8 +92,6 @@
 #include "moses/FF/VW/VWFeatureTargetPhraseInternal.h"
 #include "moses/FF/VW/VWFeatureTargetPhraseScores.h"
 
-//#include "moses/FF/VW/VWFeatureSourceConfusionWord.h"
-//#include "moses/FF/VW/VWFeatureTargetConfusionWord.h"
 #include "moses/FF/VW/VWFeatureSourceNGrams.h"
 #include "moses/FF/VW/VWFeatureSourceCSetIndicator.h"
 #include "moses/FF/VW/VWFeatureCSetConfusionWord.h"
@@ -332,8 +330,6 @@ FeatureRegistry::FeatureRegistry()
   MOSES_FNAME(VWFeatureSourceExternalFeatures);
   MOSES_FNAME(VWFeatureTargetPhraseScores);
 
-  //MOSES_FNAME(VWFeatureSourceConfusionWord);
-  //MOSES_FNAME(VWFeatureTargetConfusionWord);
   MOSES_FNAME(VWFeatureSourceNGrams);
   MOSES_FNAME(VWFeatureSourceCSetIndicator);
   MOSES_FNAME(VWFeatureCSetConfusionWord);
