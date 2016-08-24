@@ -233,9 +233,9 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
   const Range &sourceRange = translationOptionList.Get(0)->GetSourceWordsRange();
 
   if (m_train) {
-    //
+    // ///////////////////////////////////////////////////////////////////////
     // extract features for training the classifier (only call this when using vwtrainer, not in Moses!)
-    //
+    // ///////////////////////////////////////////////////////////////////////
 
     // find which topts are correct
     std::vector<bool> correct(translationOptionList.size());
@@ -298,6 +298,7 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
 
       // the first correct topt can be used by some loss functions
       const TargetPhrase &correctPhrase = translationOptionList.Get(firstCorrect)->GetTargetPhrase();
+      const Phrase originalPhrase = input.GetSubString(sourceRange);
 
       // feature extraction *at prediction time* outputs feature hashes which can be cached;
       // this is training time, simply store everything in this dummyVector
@@ -369,16 +370,16 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
             (*editFeatures[i])(input, sourceRange, cWordInfo.sourcePos, targetPhrase, cWordInfo.targetPos[toptIdx], classifier, dummyVector);
           }
 
-        float loss = (*m_trainingLoss)(targetPhrase, correctPhrase, isCorrect);
+        float loss = (*m_trainingLoss)(targetPhrase, correctPhrase, originalPhrase, isCorrect);
 
         // train classifier on current example
         classifier.Train(MakeTargetLabel(targetPhrase), loss);
       }
     }
   } else {
-    //
+    // ///////////////////////////////////////////////////////////////////////
     // predict using a trained classifier, use this in decoding (=at test time)
-    //
+    // ///////////////////////////////////////////////////////////////////////
 
     //IFVERBOSE(4) {
       //VERBOSE(4, " VW :: Source :: " << input << ":: ");
@@ -514,6 +515,8 @@ void VW::SetParameter(const std::string& key, const std::string& value) {
       m_trainingLoss = (TrainingLoss *) new TrainingLossBasic();
     } else if (value == "bleu") {
       m_trainingLoss = (TrainingLoss *) new TrainingLossBLEU();
+    } else if (value == "edits") {
+      m_trainingLoss = (TrainingLoss *) new TrainingLossEdits();
     } else {
       UTIL_THROW2("Unknown training loss type:" << value);
     }
