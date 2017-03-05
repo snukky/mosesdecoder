@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 
 #include <boost/unordered_map.hpp>
 
@@ -47,6 +48,26 @@ public:
    * If not, we insert the default count in the container. */
   inline void Add(const Key& ngram) {
     m_counts[ngram]++;
+  }
+
+  /**
+   * Adds "ngram" with given counts.
+   */
+  inline void Add(const Key& ngram, Value v) {
+    m_counts[ngram] += v;
+  }
+
+  /**
+   * Returns the total number of "ngrams" of given order n.
+   */
+  inline size_t CountNgrams(size_t n) const {
+    size_t countSum = 0;
+    for (auto const &count: m_counts) {
+      if (count.first.size() == n) {
+        countSum += count.second;
+      }
+    }
+    return countSum;
   }
 
   /**
@@ -111,6 +132,18 @@ public:
   }
   const_iterator end() const {
     return m_counts.end();
+  }
+
+  // TODO: rm
+  void debug() const {
+    std::cerr << "  ";
+    for(auto const &m_count : m_counts) {
+      for(auto i : m_count.first) {
+        std::cerr << i << ".";
+      }
+      std::cerr << " => " << m_count.second << ", ";
+    }
+    std::cerr << std::endl;
   }
 
 private:

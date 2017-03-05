@@ -33,6 +33,7 @@ HwcmScorer.cpp
 InternalTree.cpp
 M2.cpp
 M2Scorer.cpp
+GleuScorer.cpp
 Scorer.cpp
 ScorerFactory.cpp
 Optimizer.cpp
@@ -78,7 +79,9 @@ exe hgdecode : hgdecode.cpp mert_lib ..//boost_program_options ..//boost_filesys
 
 exe m2scorer : m2scorer.cpp mert_lib ..//boost_program_options ;
 
-alias programs : mert extractor evaluator pro kbmira sentence-bleu sentence-bleu-nbest hgdecode m2scorer ;
+exe sentence-gleu : sentence-gleu.cpp mert_lib ..//boost_filesystem ;
+
+alias programs : mert extractor evaluator pro kbmira sentence-bleu sentence-bleu-nbest hgdecode m2scorer sentence-gleu ;
 
 unit-test bleu_scorer_test : BleuScorerTest.cpp mert_lib ..//boost_unit_test_framework ..//boost_filesystem ;
 unit-test feature_data_test : FeatureDataTest.cpp mert_lib ..//boost_unit_test_framework ..//boost_filesystem ;

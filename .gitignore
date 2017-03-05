@@ -70,6 +70,7 @@ contrib/other-builds/*.xcodeproj/xcuserdata/
 
 mert/sentence-bleu
 mert/sentence-bleu-nbest
+mert/sentence-gleu
 ._*
 .DS_Store
 *.pbxuser
