@@ -1,16 +1,33 @@
-#include <fstream>
-#include <iostream>
-#include <vector>
-#include <string>
+// vim:tabstop=2
 
-#include <boost/shared_ptr.hpp>
+/***********************************************************************
+Moses - factored phrase-based language decoder
+Copyright (C) 2011- University of Edinburgh
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+***********************************************************************/
+
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
 
 #include "GleuScorer.h"
-#include "util/exception.hh"
 
-using namespace std;
 using namespace MosesTuning;
-
 
 int main(int argc, char **argv)
 {
@@ -32,18 +49,30 @@ int main(int argc, char **argv)
   scorer.setReferenceFiles(refFiles);
 
   // load sentences, prepare statistics, score
-  ScoreStats scoreStats;
+  ScoreStats sentStats;
+  std::vector<float> corpStats;
   std::string hyp;
   size_t sid = 0;
 
   while (getline(std::cin, hyp)) {
-    const std::vector<NgramCounts>& refs = scorer.GetReference(sid);
-    scorer.CalcGleuStats(hyp, refs[0], refs[1], scoreStats);
+    scorer.CalcGleuStats(hyp, scorer.GetReference(sid), sentStats);
+
+    // sentence-based GLEU uses smoothing
+    std::vector<float> tempStats(sentStats.getArray(), sentStats.getArray() + sentStats.size());
+    std::cerr << sid << ": " << scorer.calculateGleu(tempStats, true) << std::endl;
+
+    if (corpStats.size() == 0) {
+      corpStats = std::vector<float>(sentStats.getArray(), sentStats.getArray() + sentStats.size());
+    } else {
+      for (size_t i = 0; i < sentStats.size(); ++i) {
+        corpStats[i] += sentStats.get(i);
+      }
+    }
+
     ++sid;
   }
 
-  std::vector<float> stats(scoreStats.getArray(), scoreStats.getArray() + scoreStats.size());
-  std::cout << smoothedSentenceGleu(stats) << std::endl;
+  std::cout << scorer.calculateGleu(corpStats) << std::endl;
 
   return 0;
 }

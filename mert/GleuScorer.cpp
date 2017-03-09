@@ -24,7 +24,6 @@ namespace MosesTuning
 GleuScorer::GleuScorer(const std::string& config)
   : StatisticsBasedScorer("GLEU", config)
   , m_order(Scan<size_t>(getConfig("n", "4")))
-  , m_numIters(Scan<size_t>(getConfig("iter", "500")))
   , m_debug(Scan<bool>(getConfig("debug", "false")))
 { }
 
@@ -37,8 +36,7 @@ void GleuScorer::setReferenceFiles(const std::vector<std::string>& referenceFile
   mert::VocabularyFactory::GetVocabulary()->clear();
 
   // there should be always a single reference file with tab-separated sentences
-  UTIL_THROW_IF2(referenceFiles.size() != 1, "Too many reference files. "
-      << "A file in the tab-separated format is required.");
+  UTIL_THROW_IF2(referenceFiles.size() != 1, "Too many reference files. A file in the tab-separated format is required.");
 
   std::ifstream ifs(referenceFiles[0].c_str());
   std::string line;
@@ -50,16 +48,13 @@ void GleuScorer::setReferenceFiles(const std::vector<std::string>& referenceFile
     boost::split(columns, line, boost::is_any_of("\t"));
 
     // check if there is at least a source sentence and one reference sentence
-    UTIL_THROW_IF2(columns.size() < 2, "Too less columns in reference file '"
-        << referenceFiles[0] << "', line " << sid);
+    UTIL_THROW_IF2(columns.size() < 2, "Too less columns in reference file '" << referenceFiles[0] << "', line " << sid);
 
     // check if all lines have equal number of sentences
     if (checkNum == -1) {
       checkNum = columns.size();
     }
-    UTIL_THROW_IF2((size_t)checkNum != columns.size(),
-        "Different number of sentences in reference file '"
-        << referenceFiles[0] << "', line " << sid);
+    UTIL_THROW_IF2((size_t)checkNum != columns.size(), "Different number of sentences in reference file '" << referenceFiles[0] << "', line " << sid);
     checkNum = columns.size();
     sid += 1;
 
@@ -70,47 +65,48 @@ void GleuScorer::setReferenceFiles(const std::vector<std::string>& referenceFile
     }
     m_references.push_back(counts);
   }
+
+  if (m_debug) {
+    std::cerr << "Number of references: " << NumberOfReferences() << std::endl;
+  }
 }
 
 void GleuScorer::prepareStats(size_t sid, const std::string& text, ScoreStats& entry)
 {
-  // TODO: support more than one reference
-  const std::vector<NgramCounts>& refs = GetReference(sid);
-  CalcGleuStats(text, refs[0], refs[1], entry);
+  CalcGleuStats(text, GetReference(sid), entry);
 }
 
 statscore_t GleuScorer::calculateScore(const std::vector<ScoreStatsType>& stats) const
 {
-  UTIL_THROW_IF(stats.size() != m_order * 2 + 1, util::Exception,
-      "Incorrect number of statistics");
-
-  float logbleu = 0.0f;
-  for (size_t n = 0; n < m_order; ++n) {
-    if (stats[2*n] == 0) {
-      return 0.0f;
-    }
-    logbleu += log(stats[2*n]) - log(stats[2*n+1]);
-  }
-  logbleu /= m_order;
-
-  // reflength divided by test length
-  const float brevity = 1.0 - stats[(m_order * 2)] / static_cast<float>(stats[1]);
-  if (brevity < 0.0f) {
-    logbleu += brevity;
-  }
-  return exp(logbleu);
+  UTIL_THROW_IF(stats.size() != NumberOfScores(), util::Exception, "Incorrect number of statistics");
+  return calculateGleu(stats, false);
 }
 
-void GleuScorer::CalcGleuStats(const std::string& hypText, const NgramCounts& srcCounts, const NgramCounts& refCounts, ScoreStats& entry) const
+void GleuScorer::CalcGleuStats(const std::string& hypText, const std::vector<NgramCounts>& counts, ScoreStats& entry) const
 {
-  // there are three statistics for each order n: ngram counts of
-  // {Hyp and Ref}, ngram counts of {Hyp and Src}, ngram counts of {Hyp}
-  std::vector<ScoreStatsType> stats(m_order * 2);
-  // reference length as the last statistic
-  stats.push_back(refCounts.CountNgrams(1));
+  std::vector<ScoreStatsType> allStats(NumberOfScores());
 
   NgramCounts hypCounts;
   CountNgrams(preprocessSentence(hypText), hypCounts, m_order, true);
+
+  for (size_t r = 0; r < NumberOfReferences(); ++r) {
+    std::vector<ScoreStatsType> stats = CalcGleuStatsForSingleRef(hypCounts, counts[0], counts[r+1]);
+    for (size_t s = 0; s < stats.size(); ++s) {
+      allStats[r * (m_order * 2 + 1) + s] = stats[s];
+    }
+  }
+
+  entry.set(allStats);
+}
+
+std::vector<ScoreStatsType> GleuScorer::CalcGleuStatsForSingleRef(const NgramCounts& hypCounts,
+                                                                  const NgramCounts& srcCounts,
+                                                                  const NgramCounts& refCounts) const
+{
+  // initialize container for statistics
+  std::vector<ScoreStatsType> stats(m_order * 2 + 1);
+  // length of the reference sentence
+  stats[m_order * 2] = refCounts.CountNgrams(1);
 
   NgramCounts diffCounts;
   CountDiffNgrams(srcCounts, refCounts, diffCounts);
@@ -136,17 +132,12 @@ void GleuScorer::CalcGleuStats(const std::string& hypText, const NgramCounts& sr
     statsDiff[n - 1] += difCorrect;
   }
 
-  // calculate nominator of p*_n
+  // setup the nominator of p*_n
   for (size_t n = 0; n < m_order; ++n) {
     stats[n * 2] = std::max(stats[n * 2] - statsDiff[n], 0.0f);
   }
 
-  // accummulate stats
-  for (size_t i = 0; i < stats.size(); ++i) {
-    stats[i] += (entry.size() > i ? entry.get(i) : 0.0f);
-  }
-
-  entry.set(stats);
+  return stats;
 }
 
 size_t GleuScorer::CountNgrams(const std::string& line, NgramCounts& counts,
@@ -185,7 +176,8 @@ size_t GleuScorer::CountNgrams(const std::string& line, NgramCounts& counts,
   return len;
 }
 
-void GleuScorer::CountDiffNgrams(const NgramCounts& countsA, const NgramCounts& countsB,
+void GleuScorer::CountDiffNgrams(const NgramCounts& countsA,
+                                 const NgramCounts& countsB,
                                  NgramCounts& resultCounts) const
 {
   for (auto const &it : countsA) {
@@ -196,28 +188,34 @@ void GleuScorer::CountDiffNgrams(const NgramCounts& countsA, const NgramCounts& 
   }
 }
 
-/********************************************************************/
+float GleuScorer::calculateGleu(const std::vector<ScoreStatsType>& comps,
+                                bool smooth /* =false */) const
+{
+  const int shift = m_order * 2 + 1;
+  float sumbleu = 0.0f;
+  for (size_t r = 0; r < NumberOfReferences(); ++r) {
+    std::vector<ScoreStatsType> stats(comps.begin() + (r*shift), comps.begin() + ((r+1)*shift));
+    sumbleu += calculateGleuForSingleRef(stats, smooth);
+  }
+  return sumbleu / (float)NumberOfReferences();
+}
 
-float smoothedSentenceGleu(const std::vector<float>& comps,
-                           bool smooth /* =false */,
-                           bool debug /* =true */)
+float GleuScorer::calculateGleuForSingleRef(const std::vector<ScoreStatsType>& comps,
+                                            bool smooth /* =false */) const
 {
   // apply smoothing
   std::vector<float> stats(comps);
   if (smooth) {
     for (size_t i = 0; i < stats.size(); ++i) {
       if (stats[i] == 0) {
-        stats[1] = 1.0f;
+        stats[i] = 1.0f;
       }
     }
   }
 
-  // get maximum order of ngrams
-  size_t maxOrder = (stats.size() - 1) / 2;
-
-  if (debug) {
-    std::cerr << "max order: " << maxOrder << std::endl;
-    std::cerr << "stats final: ";
+  if (m_debug) {
+    std::cerr << "n= " << m_order << std::endl;
+    std::cerr << "stats= ";
     for (auto s : stats) {
       std::cerr << s << " ";
     }
@@ -225,25 +223,24 @@ float smoothedSentenceGleu(const std::vector<float>& comps,
   }
 
   float logbleu = 0.0f;
-  for (size_t n = 0; n < maxOrder; n++) {
+  for (size_t n = 0; n < m_order; n++) {
     if (stats[2*n] == 0) {
       return 0.0f;
     }
     logbleu += log(stats[2*n]) - log(stats[2*n+1]);
-    if (debug) {
-        std::cerr << " logbleu= " << log(stats[2*n]) - log(stats[2*n+1]);
-    }
+    //if (m_debug) {
+        //std::cerr << "logbleu= " << log(stats[2*n]) - log(stats[2*n+1]) << " ";
+    //}
   }
-  if (debug) std::cerr << std::endl;
+  //if (m_debug) std::cerr << std::endl;
 
-  logbleu /= maxOrder;
-  const float reflen = stats[(maxOrder * 2)];
-  const float hyplen = stats[1];
-  const float brevity = 1.0 - reflen / hyplen;
+  logbleu /= m_order;
 
+  const float brevity = 1.0 - stats[m_order * 2] / stats[1];
   if (brevity < 0.0f) {
     logbleu += brevity;
   }
+
   return exp(logbleu);
 }
 
