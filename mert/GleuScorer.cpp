@@ -20,11 +20,18 @@
 namespace MosesTuning
 {
 
+const std::string ToLower(const std::string& str)
+{
+  std::string lc(str);
+  std::transform(lc.begin(), lc.end(), lc.begin(), (int(*)(int))std::tolower);
+  return lc;
+}
 
 GleuScorer::GleuScorer(const std::string& config)
   : StatisticsBasedScorer("GLEU", config)
   , m_order(Scan<size_t>(getConfig("n", "4")))
   , m_debug(Scan<bool>(getConfig("debug", "false")))
+  , m_lowercase(Scan<bool>(getConfig("lowercase", "true")))
 { }
 
 GleuScorer::~GleuScorer() {}
@@ -140,10 +147,12 @@ std::vector<ScoreStatsType> GleuScorer::CalcGleuStatsForSingleRef(const NgramCou
   return stats;
 }
 
-size_t GleuScorer::CountNgrams(const std::string& line, NgramCounts& counts,
+size_t GleuScorer::CountNgrams(const std::string& original_line, NgramCounts& counts,
                                unsigned int n, bool is_testing) const
 {
+
   assert(n > 0);
+  std::string line = m_lowercase ? ToLower(original_line) : original_line;
   std::vector<int> encoded_tokens;
 
   // When performing tokenization of a hypothesis translation, we don't have

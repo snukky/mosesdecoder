@@ -16,6 +16,7 @@
 namespace MosesTuning
 {
 
+const std::string ToLower(const std::string& str);
 
 /**
  * Gleu scoring
@@ -61,6 +62,8 @@ private:
   size_t m_order;
   // show debug messages
   bool m_debug;
+  // neglect original casing
+  bool m_lowercase;
 
   // source and multiple reference sentences
   ScopedVector<std::vector<NgramCounts>> m_references;
