@@ -35,7 +35,8 @@ public:
     return NumberOfReferences() * (2 * m_order + 1);
   }
   virtual std::size_t NumberOfReferences() const {
-    return m_references[0]->size() - 1;
+    // TODO: an ugly hack for knowing the number of multiple references before reading reference files
+    return m_numrefs;
   }
 
   virtual float getReferenceLength(const std::vector<ScoreStatsType>& totals) const {
@@ -64,6 +65,11 @@ private:
   bool m_debug;
   // neglect original casing
   bool m_lowercase;
+  // apply smoothing
+  bool m_smooth;
+
+  // number of references
+  size_t m_numrefs;
 
   // source and multiple reference sentences
   ScopedVector<std::vector<NgramCounts>> m_references;

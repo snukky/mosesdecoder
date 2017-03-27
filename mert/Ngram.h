@@ -60,7 +60,7 @@ public:
   /**
    * Returns the total number of "ngrams" of given order n.
    */
-  inline size_t CountNgrams(size_t n) const {
+  inline size_t NumberOfNgrams(size_t n) const {
     size_t countSum = 0;
     for (auto const &count: m_counts) {
       if (count.first.size() == n) {

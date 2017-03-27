@@ -32,12 +32,24 @@ GleuScorer::GleuScorer(const std::string& config)
   , m_order(Scan<size_t>(getConfig("n", "4")))
   , m_debug(Scan<bool>(getConfig("debug", "false")))
   , m_lowercase(Scan<bool>(getConfig("lowercase", "true")))
-{ }
+  , m_smooth(Scan<bool>(getConfig("smooth", "false")))
+  , m_numrefs(Scan<size_t>(getConfig("numrefs", "1")))
+{
+  if (m_debug)
+    std::cerr << "Initialize GLEU scorer: " << std::endl
+        << "  order= " << m_order << std::endl
+        << "  lowercase= " << m_lowercase << std::endl
+        << "  smooth= " << m_smooth << std::endl
+        << "  numrefs= " << m_numrefs << std::endl;
+}
 
 GleuScorer::~GleuScorer() {}
 
 void GleuScorer::setReferenceFiles(const std::vector<std::string>& referenceFiles)
 {
+  if (m_debug)
+    std::cerr << "Reading reference file..." << std::endl;
+
   // make sure reference data is clear
   m_references.reset();
   mert::VocabularyFactory::GetVocabulary()->clear();
@@ -71,6 +83,13 @@ void GleuScorer::setReferenceFiles(const std::vector<std::string>& referenceFile
       CountNgrams(preprocessSentence(columns[i]), (*counts)[i], m_order);
     }
     m_references.push_back(counts);
+
+    if (m_debug)
+      if (0 == (sid + 1) % 1000)
+          std::cerr << "[" << sid + 1 << "]" << std::endl;
+
+    // update number of references
+    m_numrefs = columns.size() - 1;
   }
 
   if (m_debug) {
@@ -113,7 +132,7 @@ std::vector<ScoreStatsType> GleuScorer::CalcGleuStatsForSingleRef(const NgramCou
   // initialize container for statistics
   std::vector<ScoreStatsType> stats(m_order * 2 + 1);
   // length of the reference sentence
-  stats[m_order * 2] = refCounts.CountNgrams(1);
+  stats[m_order * 2] = refCounts.NumberOfNgrams(1);
 
   NgramCounts diffCounts;
   CountDiffNgrams(srcCounts, refCounts, diffCounts);
@@ -204,7 +223,7 @@ float GleuScorer::calculateGleu(const std::vector<ScoreStatsType>& comps,
   float sumbleu = 0.0f;
   for (size_t r = 0; r < NumberOfReferences(); ++r) {
     std::vector<ScoreStatsType> stats(comps.begin() + (r*shift), comps.begin() + ((r+1)*shift));
-    sumbleu += calculateGleuForSingleRef(stats, smooth);
+    sumbleu += calculateGleuForSingleRef(stats, m_smooth || smooth);
   }
   return sumbleu / (float)NumberOfReferences();
 }
@@ -214,7 +233,7 @@ float GleuScorer::calculateGleuForSingleRef(const std::vector<ScoreStatsType>& c
 {
   // apply smoothing
   std::vector<float> stats(comps);
-  if (smooth) {
+  if (m_smooth || smooth) {
     for (size_t i = 0; i < stats.size(); ++i) {
       if (stats[i] == 0) {
         stats[i] = 1.0f;
