@@ -99,7 +99,12 @@ void GleuScorer::setReferenceFiles(const std::vector<std::string>& referenceFile
 
 void GleuScorer::prepareStats(size_t sid, const std::string& text, ScoreStats& entry)
 {
-  CalcGleuStats(text, GetReference(sid), entry);
+  std::string prepText = preprocessSentence(text);
+  if (m_debug && sid == 0) {
+    std::cerr << "Sample input text: " << text << std::endl;
+    std::cerr << "Preprocessed text: " << prepText << std::endl;
+  }
+  CalcGleuStats(prepText, GetReference(sid), entry);
 }
 
 statscore_t GleuScorer::calculateScore(const std::vector<ScoreStatsType>& stats) const
@@ -113,7 +118,7 @@ void GleuScorer::CalcGleuStats(const std::string& hypText, const std::vector<Ngr
   std::vector<ScoreStatsType> allStats(NumberOfScores());
 
   NgramCounts hypCounts;
-  CountNgrams(preprocessSentence(hypText), hypCounts, m_order, true);
+  CountNgrams(hypText, hypCounts, m_order, true);
 
   for (size_t r = 0; r < NumberOfReferences(); ++r) {
     std::vector<ScoreStatsType> stats = CalcGleuStatsForSingleRef(hypCounts, counts[0], counts[r+1]);
