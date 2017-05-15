@@ -52,8 +52,8 @@ struct CWordInfo {
   inline bool IsFound() const {
     return ! targetPos.empty();
   }
-  inline bool NotFound() const {
-    return targetPos.empty();
+  inline bool FoundInTarget(size_t idx) const {
+    return targetPos.find(idx) != targetPos.end();
   }
 };
 

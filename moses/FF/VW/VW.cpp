@@ -290,8 +290,8 @@ void VW::EvaluateTranslationOptionListWithSourceContext(const InputType &input
         cWordInfo = finder.AnalyzeTranslationOptions(input, sourceRange, translationOptionList);
         //VERBOSE(4, "  VW :: CWordInfo :: " << cWordInfo << "\n");
 
-        // do not train if the option cset-filter is set
-        if (m_csetFilter && ! cWordInfo.IsFound()) {
+        // do not train if the option cset-filter is set and no confusion word is found
+        if (m_csetFilter && (! cWordInfo.IsFound() || ! cWordInfo.FoundInTarget(firstCorrect))) {
           continue;
         }
       }
